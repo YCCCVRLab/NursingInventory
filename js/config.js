@@ -15,15 +15,28 @@ class Config {
     }
     
     getEnvVar(name) {
-        // In a browser environment, we'll need to inject these at build time
-        // or use a build tool like Vite to handle environment variables
-        if (typeof process !== 'undefined' && process.env) {
+        // Try multiple sources for environment variables
+        
+        // 1. Vite injected variables (prefixed with VITE_)
+        if (typeof import.meta !== 'undefined' && import.meta.env) {
+            const viteVar = import.meta.env[`VITE_${name}`] || import.meta.env[name];
+            if (viteVar && viteVar !== 'undefined') {
+                return viteVar;
+            }
+        }
+        
+        // 2. Build-time injected variables
+        const envVars = window.__ENV__ || {};
+        if (envVars[name] && envVars[name] !== 'undefined') {
+            return envVars[name];
+        }
+        
+        // 3. Process env (Node.js environments)
+        if (typeof process !== 'undefined' && process.env && process.env[name]) {
             return process.env[name];
         }
         
-        // Fallback for browser - these should be injected by your build process
-        const envVars = window.__ENV__ || {};
-        return envVars[name];
+        return undefined;
     }
     
     validateConfig() {

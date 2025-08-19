@@ -5,13 +5,17 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   return {
-    // Inject environment variables into the app
+    // Make environment variables available to the client
     define: {
       'window.__ENV__': {
-        SUPABASE_URL: JSON.stringify(env.SUPABASE_URL),
-        SUPABASE_ANON_KEY: JSON.stringify(env.SUPABASE_ANON_KEY),
-        USERBASE_APP_ID: JSON.stringify(env.USERBASE_APP_ID)
-      }
+        SUPABASE_URL: JSON.stringify(env.SUPABASE_URL || ''),
+        SUPABASE_ANON_KEY: JSON.stringify(env.SUPABASE_ANON_KEY || ''),
+        USERBASE_APP_ID: JSON.stringify(env.USERBASE_APP_ID || '')
+      },
+      // Also define them as import.meta.env for better Vite compatibility
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || ''),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY || ''),
+      'import.meta.env.VITE_USERBASE_APP_ID': JSON.stringify(env.USERBASE_APP_ID || '')
     },
     server: {
       port: 3000,
