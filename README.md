@@ -2,6 +2,12 @@
 
 A secure, user-friendly inventory management system designed specifically for nursing labs and healthcare facilities.
 
+## 🌐 Live Demo
+
+**Deployed at:** [https://yccvrlab.github.io/NursingInventory/](https://yccvrlab.github.io/NursingInventory/)
+
+*Note: You'll need to set up your own Supabase and Userbase accounts to use the application.*
+
 ## 🚀 Features
 
 - **Secure Authentication**: User-based access control with Userbase
@@ -13,52 +19,68 @@ A secure, user-friendly inventory management system designed specifically for nu
 
 ## 🔧 Setup Instructions
 
-### 1. Environment Configuration
+### Method 1: GitHub Repository Secrets (Recommended for Deployment)
 
-1. Copy the example environment file:
+1. **Add Repository Secrets:**
+   - Go to `Settings` → `Secrets and variables` → `Actions`
+   - Add these secrets:
+     - `VITE_SUPABASE_URL` = `https://your-project.supabase.co`
+     - `VITE_SUPABASE_ANON_KEY` = `your_supabase_anon_key`
+     - `VITE_USERBASE_APP_ID` = `your_userbase_app_id`
+
+2. **Enable GitHub Pages:**
+   - Go to `Settings` → `Pages`
+   - Set Source to "GitHub Actions"
+   - The app will automatically deploy to `https://yourusername.github.io/NursingInventory/`
+
+### Method 2: Local Development
+
+1. **Environment Configuration:**
    ```bash
    cp .env.example .env
    ```
 
-2. Edit the `.env` file with your actual credentials:
+2. **Edit the `.env` file with your actual credentials:**
    ```env
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your_supabase_anon_key_here
-   USERBASE_APP_ID=your_userbase_app_id_here
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   VITE_USERBASE_APP_ID=your_userbase_app_id_here
    ```
 
-### 2. Supabase Setup
+3. **Running the Application:**
+   ```bash
+   # Install dependencies
+   npm install
+
+   # Start development server
+   npm run dev
+
+   # Build for production
+   npm run build
+   ```
+
+## 🔑 Service Setup
+
+### Supabase Setup
 
 1. Go to [Supabase](https://supabase.com) and create a new project
 2. Navigate to Settings > API
 3. Copy your Project URL and anon/public key
 4. The application will automatically create the required database table on first use
 
-### 3. Userbase Setup
+### Userbase Setup
 
 1. Go to [Userbase](https://userbase.com) and create an account
 2. Create a new app in your dashboard
 3. Copy your App ID from the app settings
 
-### 4. Running the Application
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-```
-
 ## 🔒 Security Features
 
-- **Environment Variables**: All sensitive credentials are stored in `.env` files
+- **Environment Variables**: All sensitive credentials are stored securely
 - **User Authentication**: Secure login/signup with Userbase
 - **Row Level Security**: Database policies ensure users only access their own data
 - **No Hardcoded Secrets**: All configuration is externalized
+- **GitHub Secrets**: Production deployment uses encrypted repository secrets
 
 ## 📱 Usage
 
@@ -75,6 +97,16 @@ The application uses:
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Userbase
 - **Build Tool**: Vite
+- **Deployment**: GitHub Actions + GitHub Pages
+
+## 🚀 Deployment
+
+This project is set up for automatic deployment:
+
+- **Push to main branch** → Automatically builds and deploys
+- **Uses GitHub repository secrets** for secure credential management
+- **Deploys to GitHub Pages** for free hosting
+- **No manual deployment needed** once secrets are configured
 
 ## 📄 License
 
@@ -83,10 +115,11 @@ This project is released into the public domain under the Unlicense. See LICENSE
 ## 🆘 Support
 
 If you encounter any issues:
-1. Check that your `.env` file is properly configured
+1. Check that your repository secrets are properly configured
 2. Verify your Supabase and Userbase credentials
-3. Check the browser console for error messages
-4. Ensure you have an active internet connection
+3. Check the GitHub Actions logs for deployment issues
+4. Check the browser console for error messages
+5. Ensure you have an active internet connection
 
 ## 🔄 Updates
 
