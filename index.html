@@ -131,6 +131,14 @@
             </div>
         </div>
 
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+            <div class="bg-base-100 p-6 rounded-lg shadow-xl text-center">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+                <p class="mt-4 text-lg">Loading inventory data...</p>
+            </div>
+        </div>
+
         <!-- Rest of your existing inventory interface goes here -->
         <!-- Dashboard Stats -->
         <div class="container mx-auto p-4">
@@ -422,6 +430,44 @@
                     signupForm.classList.remove('hidden');
                 }
             }
+        }
+
+        // Missing showLoading function - this was causing the ReferenceError
+        function showLoading(show) {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const mainApp = document.getElementById('mainApp');
+            
+            if (show) {
+                loadingOverlay.classList.remove('hidden');
+                mainApp.classList.add('loading');
+            } else {
+                loadingOverlay.classList.add('hidden');
+                mainApp.classList.remove('loading');
+            }
+        }
+
+        // Placeholder functions that might be called but not defined
+        function populateFilters() {
+            // Placeholder for filter population logic
+            console.log('populateFilters called');
+        }
+
+        function updateStats() {
+            // Placeholder for stats update logic
+            const totalItemsElement = document.getElementById('totalItems');
+            if (totalItemsElement) {
+                totalItemsElement.textContent = inventoryData.length;
+            }
+        }
+
+        function renderInventory(data) {
+            // Placeholder for inventory rendering logic
+            console.log('renderInventory called with data:', data);
+        }
+
+        function setupEventListeners() {
+            // Placeholder for event listener setup
+            console.log('setupEventListeners called');
         }
 
         // Make functions globally accessible for onclick handlers
