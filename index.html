@@ -60,11 +60,11 @@
                         </label>
                         <input type="password" id="loginPassword" placeholder="Enter password" class="input input-bordered" />
                     </div>
-                    <button class="btn btn-primary w-full" onclick="handleLogin()">
+                    <button class="btn btn-primary w-full" id="loginBtn">
                         <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                     </button>
                     <div class="divider">OR</div>
-                    <button class="btn btn-outline w-full" onclick="showSignupForm()">
+                    <button class="btn btn-outline w-full" id="showSignupBtn">
                         <i class="fas fa-user-plus mr-2"></i>Create New Account
                     </button>
                 </div>
@@ -88,10 +88,10 @@
                         </label>
                         <input type="password" id="confirmPassword" placeholder="Confirm password" class="input input-bordered" />
                     </div>
-                    <button class="btn btn-primary w-full" onclick="handleSignup()">
+                    <button class="btn btn-primary w-full" id="signupBtn">
                         <i class="fas fa-user-plus mr-2"></i>Create Account
                     </button>
-                    <button class="btn btn-outline w-full" onclick="showLoginForm()">
+                    <button class="btn btn-outline w-full" id="showLoginBtn">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Sign In
                     </button>
                 </div>
@@ -121,17 +121,17 @@
                 </div>
                 <!-- User Dropdown - Re-added -->
                 <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-sm">
+                    <label tabindex="0" class="btn btn-ghost btn-sm" id="userDropdownToggle">
                         <i class="fas fa-user mr-2"></i>
                         <span id="currentUser"></span>
                         <i class="fas fa-chevron-down ml-2"></i>
                     </label>
                     <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                        <li><a onclick="handleLogout()"><i class="fas fa-sign-out-alt mr-2"></i>Sign Out</a></li>
+                        <li><a id="logoutBtn"><i class="fas fa-sign-out-alt mr-2"></i>Sign Out</a></li>
                     </ul>
                 </div>
                 <!-- Database Setup Button - Re-added from old HTML but modified to show Userbase config -->
-                <button class="btn btn-ghost btn-sm" onclick="showDatabaseSetup()">
+                <button class="btn btn-ghost btn-sm" id="configBtn">
                     <i class="fas fa-cog"></i>
                 </button>
             </div>
@@ -172,16 +172,16 @@
 
             <!-- Action Buttons - From old HTML -->
             <div class="flex flex-wrap gap-2 mb-6">
-                <button class="btn btn-primary" onclick="showAddItemModal()">
+                <button class="btn btn-primary" id="showAddItemModalBtn">
                     <i class="fas fa-plus mr-2"></i>Add New Item
                 </button>
-                <button class="btn btn-secondary" onclick="exportData()">
+                <button class="btn btn-secondary" id="exportDataBtn">
                     <i class="fas fa-download mr-2"></i>Export Data
                 </button>
-                <button class="btn btn-accent" onclick="showImportModal()">
+                <button class="btn btn-accent" id="showImportModalBtn">
                     <i class="fas fa-upload mr-2"></i>Smart Import CSV
                 </button>
-                <button class="btn btn-info" onclick="initializeWithSampleData()" id="sampleDataBtn">
+                <button class="btn btn-info" id="sampleDataBtn">
                     <i class="fas fa-database mr-2"></i>Load Sample Data
                 </button>
             </div>
@@ -198,7 +198,7 @@
                                 </span>
                             </label>
                             <input type="text" id="searchInput" placeholder="Search by item name or description..." 
-                                   class="input input-bordered w-full" oninput="filterAndSearch()" />
+                                   class="input input-bordered w-full" />
                         </div>
 
                         <!-- Location Filter -->
@@ -208,7 +208,7 @@
                                     <i class="fas fa-map-marker-alt mr-2"></i>Location
                                 </span>
                             </label>
-                            <select id="locationFilter" class="select select-bordered w-full" onchange="filterAndSearch()">
+                            <select id="locationFilter" class="select select-bordered w-full">
                                 <option value="">All Locations</option>
                             </select>
                         </div>
@@ -220,7 +220,7 @@
                                     <i class="fas fa-tags mr-2"></i>Category
                                 </span>
                             </label>
-                            <select id="categoryFilter" class="select select-bordered w-full" onchange="filterAndSearch()">
+                            <select id="categoryFilter" class="select select-bordered w-full">
                                 <option value="">All Categories</option>
                             </select>
                         </div>
@@ -232,7 +232,7 @@
                                     <i class="fas fa-chart-bar mr-2"></i>Stock Level
                                 </span>
                             </label>
-                            <select id="stockFilter" class="select select-bordered w-full" onchange="filterAndSearch()">
+                            <select id="stockFilter" class="select select-bordered w-full">
                                 <option value="">All Stock Levels</option>
                                 <option value="low">Low Stock (≤5)</option>
                                 <option value="medium">Medium Stock (6-20)</option>
@@ -244,16 +244,16 @@
 
                     <!-- Sort Options - From old HTML -->
                     <div class="flex flex-wrap gap-2 mt-4">
-                        <button class="btn btn-sm btn-outline" onclick="sortItems('name')">
+                        <button class="btn btn-sm btn-outline" id="sortByNameBtn">
                             <i class="fas fa-sort-alpha-down mr-1"></i>Sort by Name
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="sortItems('quantity')">
+                        <button class="btn btn-sm btn-outline" id="sortByQuantityBtn">
                             <i class="fas fa-sort-numeric-down mr-1"></i>Sort by Quantity
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="sortItems('location')">
+                        <button class="btn btn-sm btn-outline" id="sortByLocationBtn">
                             <i class="fas fa-sort mr-1"></i>Sort by Location
                         </button>
-                        <button class="btn btn-sm btn-primary" onclick="resetFilters()">
+                        <button class="btn btn-sm btn-primary" id="resetFiltersBtn">
                             <i class="fas fa-refresh mr-1"></i>Reset Filters
                         </button>
                     </div>
@@ -322,7 +322,7 @@
                 <div class="form-control">
                     <label class="cursor-pointer label">
                         <span class="label-text">Enable Demo Mode (Local Storage) - No database or signup required</span>
-                        <input type="checkbox" id="demoMode" class="checkbox" onchange="toggleDemoModeFields()" />
+                        <input type="checkbox" id="demoMode" class="checkbox" />
                     </label>
                 </div>
 
@@ -394,10 +394,10 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-primary" onclick="connectDatabase()">
+                <button class="btn btn-primary" id="connectDbBtn">
                     <i class="fas fa-plug mr-2"></i>Connect &amp; Load
                 </button>
-                <button class="btn" onclick="closeDatabaseSetup()">Cancel</button>
+                <button class="btn" id="closeDbBtn">Cancel</button>
             </div>
         </div>
     </div>
@@ -469,7 +469,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save mr-2"></i>Save Item
                     </button>
-                    <button type="button" class="btn" onclick="closeItemModal()">Cancel</button>
+                    <button type="button" class="btn" id="closeItemModalBtn">Cancel</button>
                 </div>
             </form>
         </div>
@@ -485,7 +485,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                         <span class="label-text">Select CSV File</span>
                     </label>
                     <input type="file" id="importFile" accept=".csv" class="file-input file-input-bordered" 
-                           onchange="previewCSV()" />
+                           />
                 </div>
                 
                 <div class="alert alert-success">
@@ -525,10 +525,10 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-primary" onclick="importData()" id="importBtn" disabled>
+                <button class="btn btn-primary" id="importBtn" disabled>
                     <i class="fas fa-upload mr-2"></i>Import Data
                 </button>
-                <button class="btn" onclick="closeImportModal()">Cancel</button>
+                <button class="btn" id="closeImportModalBtn">Cancel</button>
             </div>
         </div>
     </div>
@@ -544,10 +544,10 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-error" onclick="confirmDelete()">
+                <button class="btn btn-error" id="confirmDeleteBtn">
                     <i class="fas fa-trash mr-2"></i>Delete
                 </button>
-                <button class="btn" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn" id="closeDeleteModalBtn">Cancel</button>
             </div>
         </div>
     </div>
@@ -844,10 +844,10 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                                     ${category}
                                 </div>
                                 <div class="flex gap-1">
-                                    <button class="btn btn-xs btn-primary" onclick="showEditItemModal(${item.id})">
+                                    <button class="btn btn-xs btn-primary edit-item-btn" data-id="${item.id}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-xs btn-error" onclick="showDeleteModal(${item.id})">
+                                    <button class="btn btn-xs btn-error delete-item-btn" data-id="${item.id}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -858,6 +858,14 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             }).join('');
 
             document.getElementById('resultCount').textContent = data.length;
+
+            // Re-attach event listeners for dynamically rendered buttons
+            document.querySelectorAll('.edit-item-btn').forEach(button => {
+                button.addEventListener('click', (event) => showEditItemModal(parseInt(event.currentTarget.dataset.id)));
+            });
+            document.querySelectorAll('.delete-item-btn').forEach(button => {
+                button.addEventListener('click', (event) => showDeleteModal(parseInt(event.currentTarget.dataset.id)));
+            });
         }
 
         function populateFilters() {
@@ -1236,353 +1244,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             }
         }
 
-        // --- Item Management Functions (for Modals) ---
-        async function addItem() { // This function is called from the main page form
-            const itemName = document.getElementById('itemName').value.trim();
-            const location = document.getElementById('itemLocation').value.trim();
-            const quantity = document.getElementById('itemQuantity').value.trim();
-            const description = document.getElementById('itemDescription').value.trim();
-            const shelf = document.getElementById('itemShelf').value.trim();
-            const tub = document.getElementById('itemTub').value.trim();
-
-            if (!itemName || !location || !quantity) {
-                showToast('Please fill in required fields (Name, Location, Quantity)', 'error');
-                return;
-            }
-
-            try {
-                // Use a fixed user_id for shared inventory
-                const itemToSave = {
-                    user_id: 'yccc-shared', 
-                    item: itemName,
-                    description: description,
-                    location: location,
-                    shelf: shelf,
-                    tub: tub,
-                    quantity: quantity
-                };
-
-                await saveItem(itemToSave); // Call the generic saveItem function
-
-                // Clear form
-                document.getElementById('itemName').value = '';
-                document.getElementById('itemLocation').value = '';
-                document.getElementById('itemQuantity').value = '';
-                document.getElementById('itemDescription').value = '';
-                document.getElementById('itemShelf').value = '';
-                document.getElementById('itemTub').value = '';
-
-                // Refresh data
-                await loadInventoryData();
-                populateFilters();
-                updateStats();
-                renderInventory(filteredData);
-
-                showToast('Item added to YCCC Nursing Lab inventory!', 'success');
-            } catch (error) {
-                console.error('Error adding item:', error);
-                showToast('Error adding item: ' + error.message, 'error');
-            }
-        }
-
-        function showAddItemModal() {
-            editingItemId = null;
-            document.getElementById('modalTitle').textContent = 'Add New Item';
-            document.getElementById('itemForm').reset();
-            document.getElementById('itemModal').classList.add('modal-open');
-        }
-
-        function showEditItemModal(id) {
-            const item = inventoryData.find(i => i.id === id);
-            if (!item) return;
-            
-            editingItemId = id;
-            document.getElementById('modalTitle').textContent = 'Edit Item';
-            
-            document.getElementById('itemName').value = item.item || '';
-            document.getElementById('itemDescription').value = item.description || '';
-            document.getElementById('itemLocation').value = item.location || '';
-            document.getElementById('itemShelf').value = item.shelf || '';
-            document.getElementById('itemTub').value = item.tub || '';
-            document.getElementById('itemQuantity').value = item.quantity || '';
-            
-            document.getElementById('itemModal').classList.add('modal-open');
-        }
-
-        function closeItemModal() {
-            document.getElementById('itemModal').classList.remove('modal-open');
-            editingItemId = null;
-        }
-
-        async function handleItemSubmit(event) {
-            event.preventDefault();
-            
-            const formData = new FormData(event.target);
-            const itemData = {
-                item: formData.get('item'),
-                description: formData.get('description'),
-                location: formData.get('location'),
-                shelf: formData.get('shelf'),
-                tub: formData.get('tub'),
-                quantity: formData.get('quantity')
-            };
-            
-            try {
-                await saveItem(itemData);
-                await loadInventoryData();
-                populateFilters();
-                updateStats();
-                renderInventory(filteredData);
-                closeItemModal();
-                
-                showToast(editingItemId ? 'Item updated successfully!' : 'Item added successfully!', 'success');
-            } catch (error) {
-                showToast('Error saving item:', error);
-            }
-        }
-
-        function showDeleteModal(id) {
-            const item = inventoryData.find(i => i.id === id);
-            if (!item) return;
-            
-            deleteItemId = id;
-            document.getElementById('deleteItemName').textContent = item.item;
-            document.getElementById('deleteItemDetails').textContent = 
-                `${item.description || 'No description'} - ${item.location}`;
-            
-            document.getElementById('deleteModal').classList.add('modal-open');
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').classList.remove('modal-open');
-            deleteItemId = null;
-        }
-
-        async function confirmDelete() {
-            if (!deleteItemId) return;
-            
-            try {
-                await deleteItem(deleteItemId);
-                await loadInventoryData();
-                populateFilters();
-                updateStats();
-                renderInventory(filteredData);
-                closeDeleteModal();
-                
-                showToast('Item deleted successfully!', 'success');
-            } catch (error) {
-                showToast('Error deleting item: ' + error.message, 'error');
-            }
-        }
-
-        function showImportModal() {
-            document.getElementById('importModal').classList.add('modal-open');
-            // Reset the modal
-            document.getElementById('csvPreview').classList.add('hidden');
-            document.getElementById('importBtn').disabled = true;
-            document.getElementById('importFile').value = '';
-            csvData = null;
-        }
-
-        function closeImportModal() {
-            document.getElementById('importModal').classList.remove('modal-open');
-        }
-
-        // --- CSV Parsing and Import/Export Functions ---
-        function previewCSV() {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-            
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n').filter(line => line.trim());
-                
-                if (lines.length < 2) {
-                    showToast('CSV file must have at least a header row and one data row', 'error');
-                    return;
-                }
-                
-                const headers = parseCSVLine(lines[0]);
-                const sampleRow = parseCSVLine(lines[1]);
-                
-                // Map headers to our schema
-                const mappedHeaders = headers.map(header => {
-                    const normalized = header.toLowerCase().trim();
-                    return columnMappings[normalized] || 'unmapped';
-                });
-                
-                // Show preview
-                const previewBody = document.getElementById('csvPreviewBody');
-                previewBody.innerHTML = '';
-                
-                headers.forEach((header, index) => {
-                    const mappedTo = mappedHeaders[index];
-                    const sampleData = sampleRow[index] || '';
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="font-mono text-sm">${header}</td>
-                        <td>
-                            <span class="badge ${mappedTo === 'unmapped' ? 'badge-warning' : 'badge-success'} badge-sm">
-                                ${mappedTo === 'unmapped' ? 'Will be ignored' : mappedTo}
-                            </span>
-                        </td>
-                        <td class="text-sm opacity-70">${sampleData}</td>
-                    `;
-                    previewBody.appendChild(row);
-                });
-                
-                // Store parsed data
-                csvData = {
-                    headers: headers,
-                    mappedHeaders: mappedHeaders,
-                    lines: lines.slice(1) // Skip header
-                };
-                
-                document.getElementById('previewRowCount').textContent = csvData.lines.length;
-                document.getElementById('csvPreview').classList.remove('hidden');
-                document.getElementById('importBtn').disabled = false;
-            };
-            
-            reader.readAsText(file);
-        }
-
-        function parseCSVLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            
-            result.push(current.trim());
-            return result.map(field => field.replace(/^"|"$/g, '')); // Remove surrounding quotes
-        }
-
-        async function importData() {
-            if (!csvData) {
-                showToast('Please select and preview a CSV file first', 'error');
-                return;
-            }
-            
-            try {
-                showLoading(true);
-                let importedCount = 0;
-                let skippedCount = 0;
-                
-                for (const line of csvData.lines) {
-                    if (!line.trim()) {
-                        skippedCount++;
-                        continue;
-                    }
-                    
-                    const values = parseCSVLine(line);
-                    const item = {};
-                    
-                    // Map values to our schema
-                    csvData.mappedHeaders.forEach((mappedHeader, index) => {
-                        if (mappedHeader !== 'unmapped' && values[index]) {
-                            item[mappedHeader] = values[index].trim();
-                        }
-                    });
-                    
-                    // Ensure required fields
-                    if (!item.item || !item.location) {
-                        skippedCount++;
-                        continue;
-                    }
-                    
-                    // Set user_id for shared inventory
-                    item.user_id = 'yccc-shared'; 
-
-                    await saveItem(item); // Use the generic saveItem function
-                    importedCount++;
-                }
-                
-                await loadInventoryData();
-                populateFilters();
-                updateStats();
-                renderInventory(filteredData);
-                closeImportModal();
-                
-                showToast(`Successfully imported ${importedCount} items! ${skippedCount > 0 ? `Skipped ${skippedCount} invalid rows.` : ''}`, 'success');
-                
-            } catch (error) {
-                showToast('Error importing data: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function exportData() {
-            const csv = convertToCSV(inventoryData);
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `inventory_export_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            showToast('Data exported successfully!', 'success');
-        }
-
-        function convertToCSV(data) {
-            const headers = ['item', 'description', 'location', 'shelf', 'tub', 'quantity'];
-            const csvContent = [
-                headers.join(','),
-                ...data.map(item => 
-                    headers.map(header => 
-                        `"${(item[header] || '').toString().replace(/"/g, '&quot;')}"`
-                    ).join(',')
-                )
-            ].join('\n');
-            
-            return csvContent;
-        }
-
-        async function initializeWithSampleData() {
-            if (inventoryData.length > 0) {
-                if (!confirm('This will add sample data to your existing inventory. Continue?')) {
-                    return;
-                }
-            }
-            
-            const sampleData = getSampleData();
-            
-            try {
-                for (const item of sampleData) {
-                    item.user_id = 'yccc-shared'; // Ensure sample data also uses shared ID
-                    await saveItem(item);
-                }
-                
-                await loadInventoryData();
-                populateFilters();
-                updateStats();
-                renderInventory(filteredData);
-                
-                showToast(`Added ${sampleData.length} sample items!`, 'success');
-                // document.getElementById('sampleDataBtn').style.display = 'none'; // Keep button visible for multiple loads
-                
-            } catch (error) {
-                showToast('Error loading sample data: ' + error.message, 'error');
-            }
-        }
-
-        // --- Entry Point and Global Assignments ---
+        // --- Entry Point and Event Listeners ---
         // Initialize the application
         async function init() {
             try {
@@ -1607,35 +1269,53 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 console.error('Initialization error:', error);
                 showToast('Failed to initialize application: ' + error.message, 'error'); 
                 showAuthScreen(); // Ensure auth screen is visible on init error
+            } finally {
+                // Ensure event listeners are set up after DOM is ready and functions are defined
+                setupEventListeners();
             }
         }
 
-        // Make functions globally accessible for onclick handlers
-        // This is done at the end to ensure all functions are defined before assignment
-        window.handleLogin = handleLogin;
-        window.handleSignup = handleSignup;
-        window.showLoginForm = showLoginForm;
-        window.showSignupForm = showSignupForm;
-        window.handleLogout = handleLogout;
-        window.showDatabaseSetup = showDatabaseSetup;
-        window.closeDatabaseSetup = closeDatabaseSetup;
-        window.connectDatabase = connectDatabase;
-        window.showAddItemModal = showAddItemModal;
-        window.showEditItemModal = showEditItemModal;
-        window.closeItemModal = closeItemModal;
-        window.handleItemSubmit = handleItemSubmit;
-        window.showDeleteModal = showDeleteModal;
-        window.closeDeleteModal = closeDeleteModal;
-        window.confirmDelete = confirmDelete;
-        window.showImportModal = showImportModal;
-        window.closeImportModal = closeImportModal;
-        window.previewCSV = previewCSV;
-        window.importData = importData;
-        window.exportData = exportData;
-        window.initializeWithSampleData = initializeWithSampleData;
-        window.filterAndSearch = filterAndSearch;
-        window.sortItems = sortItems;
-        window.resetFilters = resetFilters;
+        function setupEventListeners() {
+            // Authentication forms
+            document.getElementById('loginBtn')?.addEventListener('click', handleLogin);
+            document.getElementById('showSignupBtn')?.addEventListener('click', showSignupForm);
+            document.getElementById('signupBtn')?.addEventListener('click', handleSignup);
+            document.getElementById('showLoginBtn')?.addEventListener('click', showLoginForm);
+            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+
+            // Database setup modal
+            document.getElementById('configBtn')?.addEventListener('click', showDatabaseSetup);
+            document.getElementById('connectDbBtn')?.addEventListener('click', connectDatabase);
+            document.getElementById('closeDbBtn')?.addEventListener('click', closeDatabaseSetup);
+            document.getElementById('demoMode')?.addEventListener('change', toggleDemoModeFields);
+
+            // Action buttons
+            document.getElementById('showAddItemModalBtn')?.addEventListener('click', showAddItemModal);
+            document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
+            document.getElementById('showImportModalBtn')?.addEventListener('click', showImportModal);
+            document.getElementById('sampleDataBtn')?.addEventListener('click', initializeWithSampleData);
+
+            // Search and filters
+            document.getElementById('searchInput')?.addEventListener('input', filterAndSearch);
+            document.getElementById('locationFilter')?.addEventListener('change', filterAndSearch);
+            document.getElementById('categoryFilter')?.addEventListener('change', filterAndSearch);
+            document.getElementById('stockFilter')?.addEventListener('change', filterAndSearch);
+            document.getElementById('sortByNameBtn')?.addEventListener('click', () => sortItems('name'));
+            document.getElementById('sortByQuantityBtn')?.addEventListener('click', () => sortItems('quantity'));
+            document.getElementById('sortByLocationBtn')?.addEventListener('click', () => sortItems('location'));
+            document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
+
+            // Item management modals
+            document.getElementById('itemForm')?.addEventListener('submit', handleItemSubmit);
+            document.getElementById('closeItemModalBtn')?.addEventListener('click', closeItemModal);
+            document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDelete);
+            document.getElementById('closeDeleteModalBtn')?.addEventListener('click', closeDeleteModal);
+
+            // CSV Import
+            document.getElementById('importFile')?.addEventListener('change', previewCSV);
+            document.getElementById('importBtn')?.addEventListener('click', importData);
+            document.getElementById('closeImportModalBtn')?.addEventListener('click', closeImportModal);
+        }
 
         // Start the application
         init();
