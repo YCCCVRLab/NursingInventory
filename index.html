@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Nursing Lab Inventory Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://sdk.userbase.com/2/userbase.js"></script>
+    <style>
+        .low-stock { border-left: 4px solid #ef4444; }
+        .medium-stock { border-left: 4px solid #f59e0b; }
+        .high-stock { border-left: 4px solid #10b981; }
+        .search-highlight { background-color: #fef3c7; font-weight: bold; }
+        .category-badge { font-size: 0.75rem; }
+        .loading { opacity: 0.6; pointer-events: none; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    </style>
+<link type="text/css" rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="bg-base-100">
+    <!-- Authentication Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="card bg-base-100 shadow-xl w-full max-w-md">
+            <div class="card-body">
+                <div class="text-center mb-6">
+                    <i class="fas fa-hospital-alt text-4xl text-primary mb-4"></i>
+                    <h2 class="card-title text-2xl justify-center">Nursing Lab Inventory</h2>
+                    <p class="text-base-content opacity-70">Secure access required</p>
+                </div>
+                
+                <div id="loginForm" class="space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Username</span>
+                        </label>
+                        <input type="text" id="loginUsername" placeholder="Enter username" class="input input-bordered" />
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Password</span>
+                        </label>
+                        <input type="password" id="loginPassword" placeholder="Enter password" class="input input-bordered" />
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="handleLogin()">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                    </button>
+                    <div class="divider">OR</div>
+                    <button class="btn btn-outline w-full" onclick="showSignupForm()">
+                        <i class="fas fa-user-plus mr-2"></i>Create New Account
+                    </button>
+                </div>
+
+                <div id="signupForm" class="space-y-4 hidden">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Username</span>
+                        </label>
+                        <input type="text" id="signupUsername" placeholder="Choose username" class="input input-bordered" />
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Password</span>
+                        </label>
+                        <input type="password" id="signupPassword" placeholder="Choose password" class="input input-bordered" />
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Confirm Password</span>
+                        </label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm password" class="input input-bordered" />
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="handleSignup()">
+                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                    </button>
+                    <button class="btn btn-outline w-full" onclick="showLoginForm()">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Sign In
+                    </button>
+                </div>
+
+                <div id="authLoading" class="text-center py-4 hidden">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                    <p class="mt-2">Authenticating...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (hidden until authenticated) -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <div class="navbar bg-primary text-primary-content shadow-lg">
+            <div class="flex-1">
+                <i class="fas fa-hospital-alt text-2xl mr-3"></i>
+                <h1 class="text-xl font-bold">Nursing Lab Inventory Management</h1>
+            </div>
+            <div class="flex-none gap-2">
+                <div class="badge badge-secondary badge-lg">
+                    <span id="totalItems">0</span> Items
+                </div>
+                <div id="connectionStatus" class="badge badge-success badge-sm">
+                    <i class="fas fa-wifi mr-1"></i>Connected
+                </div>
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-user mr-2"></i>
+                        <span id="currentUser"></span>
+                        <i class="fas fa-chevron-down ml-2"></i>
+                    </label>
+                    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a onclick="handleLogout()"><i class="fas fa-sign-out-alt mr-2"></i>Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rest of your existing inventory interface goes here -->
+        <!-- Dashboard Stats -->
+        <div class="container mx-auto p-4">
+            <!-- Your existing dashboard content -->
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your actual credentials
+        const CONFIG = {
+            supabase: {
+                url: 'YOUR_SUPABASE_URL',
+                key: 'YOUR_SUPABASE_ANON_KEY'
+            },
+            userbase: {
+                appId: 'YOUR_USERBASE_APP_ID'
+            }
+        };
+
+        // Global variables
+        let supabase = null;
+        let currentUser = null;
+        let inventoryData = [];
+        let filteredData = [];
+
+        // Initialize the application
+        async function init() {
+            try {
+                // Initialize Userbase
+                await userbase.init({ appId: CONFIG.userbase.appId });
+                
+                // Check if user is already signed in
+                const session = await userbase.getSession();
+                if (session.user) {
+                    await handleSuccessfulAuth(session.user);
+                } else {
+                    showAuthScreen();
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showToast('Failed to initialize application', 'error');
+            }
+        }
+
+        // Authentication functions
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showToast('Please enter both username and password', 'error');
+                return;
+            }
+
+            showAuthLoading(true);
+            try {
+                const user = await userbase.signIn({ username, password });
+                await handleSuccessfulAuth(user);
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed: ' + error.message, 'error');
+            } finally {
+                showAuthLoading(false);
+            }
+        }
+
+        async function handleSignup() {
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!username || !password || !confirmPassword) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            showAuthLoading(true);
+            try {
+                const user = await userbase.signUp({ username, password });
+                await handleSuccessfulAuth(user);
+                showToast('Account created successfully!', 'success');
+            } catch (error) {
+                console.error('Signup error:', error);
+                showToast('Signup failed: ' + error.message, 'error');
+            } finally {
+                showAuthLoading(false);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await userbase.signOut();
+                currentUser = null;
+                supabase = null;
+                inventoryData = [];
+                filteredData = [];
+                showAuthScreen();
+                showToast('Signed out successfully', 'info');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Error signing out', 'error');
+            }
+        }
+
+        async function handleSuccessfulAuth(user) {
+            currentUser = user;
+            document.getElementById('currentUser').textContent = user.username;
+            
+            // Initialize Supabase with auto-connection
+            await initializeSupabase();
+            
+            // Show main app
+            showMainApp();
+            
+            // Load inventory data
+            await loadInventoryData();
+            populateFilters();
+            updateStats();
+            renderInventory(filteredData);
+            setupEventListeners();
+        }
+
+        // Database initialization with auto-connection
+        async function initializeSupabase() {
+            try {
+                supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.key);
+                
+                // Test connection and auto-create table if needed
+                const { data: testData, error: testError } = await supabase
+                    .from('inventory_items')
+                    .select('count')
+                    .limit(1);
+                
+                if (testError && testError.code === 'PGRST116') {
+                    // Table doesn't exist, create it
+                    await createInventoryTable();
+                } else if (testError) {
+                    throw testError;
+                }
+                
+                updateConnectionStatus('Connected', 'success');
+            } catch (error) {
+                console.error('Database connection error:', error);
+                updateConnectionStatus('Connection Failed', 'error');
+                showToast('Database connection failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-create inventory table
+        async function createInventoryTable() {
+            try {
+                // Use Supabase SQL to create table
+                const { error } = await supabase.rpc('exec_sql', {
+                    sql: `
+                        CREATE TABLE IF NOT EXISTS public.inventory_items (
+                            id SERIAL PRIMARY KEY,
+                            user_id TEXT NOT NULL DEFAULT '${currentUser.userId}',
+                            item TEXT NOT NULL,
+                            description TEXT,
+                            location TEXT NOT NULL,
+                            shelf TEXT,
+                            tub TEXT,
+                            quantity TEXT,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+
+                        -- Enable Row Level Security
+                        ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
+
+                        -- Create policy for user isolation
+                        CREATE POLICY "Users can only access their own items" 
+                        ON public.inventory_items FOR ALL 
+                        USING (user_id = '${currentUser.userId}');
+                    `
+                });
+
+                if (error) throw error;
+                showToast('Database table created successfully!', 'success');
+            } catch (error) {
+                console.error('Table creation error:', error);
+                showToast('Failed to create database table', 'error');
+            }
+        }
+
+        // Enhanced data loading with user isolation
+        async function loadInventoryData() {
+            if (!supabase || !currentUser) return;
+            
+            showLoading(true);
+            try {
+                const { data, error } = await supabase
+                    .from('inventory_items')
+                    .select('*')
+                    .eq('user_id', currentUser.userId)
+                    .order('item');
+                    
+                if (error) throw error;
+                
+                inventoryData = data || [];
+                filteredData = [...inventoryData];
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Error loading inventory data: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Enhanced save function with user association
+        async function saveItem(itemData) {
+            if (!supabase || !currentUser) return;
+            
+            try {
+                const dataWithUser = {
+                    ...itemData,
+                    user_id: currentUser.userId
+                };
+
+                if (editingItemId) {
+                    const { data, error } = await supabase
+                        .from('inventory_items')
+                        .update({ ...dataWithUser, updated_at: new Date().toISOString() })
+                        .eq('id', editingItemId)
+                        .eq('user_id', currentUser.userId)
+                        .select();
+                        
+                    if (error) throw error;
+                    return data[0];
+                } else {
+                    const { data, error } = await supabase
+                        .from('inventory_items')
+                        .insert([dataWithUser])
+                        .select();
+                        
+                    if (error) throw error;
+                    return data[0];
+                }
+            } catch (error) {
+                console.error('Error saving item:', error);
+                throw error;
+            }
+        }
+
+        // UI Helper functions
+        function showAuthScreen() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+        }
+
+        function showSignupForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        }
+
+        function showAuthLoading(show) {
+            const loading = document.getElementById('authLoading');
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            if (show) {
+                loading.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                signupForm.classList.add('hidden');
+            } else {
+                loading.classList.add('hidden');
+                if (signupForm.classList.contains('hidden')) {
+                    loginForm.classList.remove('hidden');
+                } else {
+                    signupForm.classList.remove('hidden');
+                }
+            }
+        }
+
+        function updateConnectionStatus(status, type) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `badge badge-${type} badge-sm`;
+            statusEl.innerHTML = `<i class="fas fa-${type === 'success' ? 'wifi' : type === 'warning' ? 'exclamation-triangle' : 'times'} mr-1"></i>${status}`;
+        }
+
+        function showToast(message, type = 'info') {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} shadow-lg mb-2 fade-in fixed top-4 right-4 z-50 max-w-sm`;
+            toast.innerHTML = `
+                <div>
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation-triangle' : 'info'}-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Your existing inventory management functions go here
+        // (renderInventory, filterAndSearch, etc.)
+
+        // Start the application
+        init();
+    </script>
+<script type="text/javascript" src="js/script.js"></script>
+</body>
+</html>
