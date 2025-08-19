@@ -36,6 +36,18 @@ class Config {
             return process.env[name];
         }
         
+        // 4. For development/testing - you can temporarily hardcode values here
+        // REMOVE THESE BEFORE PRODUCTION!
+        const developmentDefaults = {
+            // 'SUPABASE_URL': 'https://your-project.supabase.co',
+            // 'SUPABASE_ANON_KEY': 'your_key_here',
+            // 'USERBASE_APP_ID': 'your_app_id_here'
+        };
+        
+        if (developmentDefaults[name]) {
+            return developmentDefaults[name];
+        }
+        
         return undefined;
     }
     
@@ -48,7 +60,13 @@ class Config {
         
         const missing = required.filter(path => {
             const value = this.getNestedValue(this.config, path);
-            return !value || value.includes('your_') || value.includes('YOUR_') || value === 'undefined';
+            return !value || 
+                   value.includes('your_') || 
+                   value.includes('YOUR_') || 
+                   value === 'undefined' ||
+                   value.includes('your-project.supabase.co') ||
+                   value.includes('your_supabase_') ||
+                   value.includes('your_userbase_');
         });
         
         if (missing.length > 0) {
@@ -78,7 +96,13 @@ Please set up your environment variables:
    - Create an account and new app
    - Copy your App ID
 
-3. Update your .env file with the actual values
+3. Update your .env file with the actual values:
+   SUPABASE_URL=https://your-actual-project.supabase.co
+   SUPABASE_ANON_KEY=your_actual_anon_key
+   USERBASE_APP_ID=your_actual_app_id
+
+4. For development, you can temporarily add values in js/config.js
+   (Look for developmentDefaults object)
 
 Need help? Check the README or contact support.
         `;
@@ -88,6 +112,25 @@ Need help? Check the README or contact support.
         // Show user-friendly message in UI
         if (document.getElementById('configHelp')) {
             document.getElementById('configHelp').style.display = 'block';
+            const helpElement = document.getElementById('configHelp');
+            if (helpElement) {
+                helpElement.innerHTML = `
+                    <div>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <h3 class="font-bold">Configuration Required</h3>
+                            <div class="text-xs mt-2">
+                                <p>Please set up your credentials:</p>
+                                <ul class="list-disc list-inside mt-1">
+                                    <li>Create accounts at <a href="https://supabase.com" target="_blank" class="link">Supabase</a> and <a href="https://userbase.com" target="_blank" class="link">Userbase</a></li>
+                                    <li>Update the .env file with your actual credentials</li>
+                                    <li>See README.md for detailed instructions</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
     }
     
@@ -111,7 +154,25 @@ Need help? Check the README or contact support.
                userbaseAppId !== 'undefined' &&
                !supabaseUrl.includes('your_') && 
                !supabaseKey.includes('your_') &&
-               !userbaseAppId.includes('your_');
+               !userbaseAppId.includes('your_') &&
+               !supabaseUrl.includes('your-project.supabase.co') &&
+               !supabaseKey.includes('your_supabase_') &&
+               !userbaseAppId.includes('your_userbase_');
+    }
+    
+    // Helper method to get configuration status
+    getConfigurationStatus() {
+        const status = {
+            supabase: {
+                url: !!this.config.supabase.url && !this.config.supabase.url.includes('your_'),
+                key: !!this.config.supabase.key && !this.config.supabase.key.includes('your_')
+            },
+            userbase: {
+                appId: !!this.config.userbase.appId && !this.config.userbase.appId.includes('your_')
+            }
+        };
+        
+        return status;
     }
 }
 
