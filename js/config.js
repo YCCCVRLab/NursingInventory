@@ -35,7 +35,7 @@ class Config {
         
         const missing = required.filter(path => {
             const value = this.getNestedValue(this.config, path);
-            return !value || value.includes('your_') || value.includes('YOUR_');
+            return !value || value.includes('your_') || value.includes('YOUR_') || value === 'undefined';
         });
         
         if (missing.length > 0) {
