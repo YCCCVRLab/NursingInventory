@@ -1,0 +1,19 @@
+{
+  "name": "nursing-lab-inventory",
+  "version": "1.0.0",
+  "description": "Secure nursing lab inventory management system",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite"
+  },
+  "dependencies": {
+    "vite": "^5.0.0"
+  },
+  "devDependencies": {},
+  "keywords": ["inventory", "nursing", "healthcare", "management"],
+  "author": "",
+  "license": "Unlicense"
+}
