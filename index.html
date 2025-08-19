@@ -354,7 +354,7 @@
 
                 <!-- Manual SQL Instructions - Updated -->
                 <div class="collapse collapse-arrow bg-base-200">
-                    <input type="checkbox" /> 
+                    <input type="checkbox" id="manualSqlToggle" /> 
                     <div class="collapse-title text-sm font-medium">
                         <i class="fas fa-code mr-2"></i>Manual Database Setup (if auto-creation fails)
                     </div>
@@ -466,7 +466,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 </div>
                 
                 <div class="modal-action">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="saveItemBtn">
                         <i class="fas fa-save mr-2"></i>Save Item
                     </button>
                     <button type="button" class="btn" id="closeItemModalBtn">Cancel</button>
@@ -648,8 +648,6 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 loading.classList.add('hidden');
                 if (signupForm.classList.contains('hidden')) {
                     loginForm.classList.remove('hidden');
-                } else {
-                    signupForm.classList.remove('hidden');
                 }
             }
         }
@@ -1139,7 +1137,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
 
             showAuthLoading(true);
             try {
-                const user = await userbase.signIn({ username, password });
+                const user = await userbase.signIn({ appId: CONFIG.userbase.appId, username, password });
                 await handleSuccessfulAuth(user);
             } catch (error) {
                 console.error('Login error:', error);
@@ -1171,7 +1169,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
 
             showAuthLoading(true);
             try {
-                const user = await userbase.signUp({ username, password });
+                const user = await userbase.signUp({ appId: CONFIG.userbase.appId, username, password });
                 await handleSuccessfulAuth(user);
                 showToast('Account created successfully! Welcome to YCCC Nursing Lab.', 'success');
             } catch (error) {
@@ -1269,56 +1267,53 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 console.error('Initialization error:', error);
                 showToast('Failed to initialize application: ' + error.message, 'error'); 
                 showAuthScreen(); // Ensure auth screen is visible on init error
-            } finally {
-                // Ensure event listeners are set up after DOM is ready and functions are defined
-                setupEventListeners();
             }
         }
 
         function setupEventListeners() {
             // Authentication forms
-            document.getElementById('loginBtn')?.addEventListener('click', handleLogin);
-            document.getElementById('showSignupBtn')?.addEventListener('click', showSignupForm);
-            document.getElementById('signupBtn')?.addEventListener('click', handleSignup);
-            document.getElementById('showLoginBtn')?.addEventListener('click', showLoginForm);
-            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
+            document.getElementById('showSignupBtn').addEventListener('click', showSignupForm);
+            document.getElementById('signupBtn').addEventListener('click', handleSignup);
+            document.getElementById('showLoginBtn').addEventListener('click', showLoginForm);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 
             // Database setup modal
-            document.getElementById('configBtn')?.addEventListener('click', showDatabaseSetup);
-            document.getElementById('connectDbBtn')?.addEventListener('click', connectDatabase);
-            document.getElementById('closeDbBtn')?.addEventListener('click', closeDatabaseSetup);
-            document.getElementById('demoMode')?.addEventListener('change', toggleDemoModeFields);
+            document.getElementById('configBtn').addEventListener('click', showDatabaseSetup);
+            document.getElementById('connectDbBtn').addEventListener('click', connectDatabase);
+            document.getElementById('closeDbBtn').addEventListener('click', closeDatabaseSetup);
+            document.getElementById('demoMode').addEventListener('change', toggleDemoModeFields);
 
             // Action buttons
-            document.getElementById('showAddItemModalBtn')?.addEventListener('click', showAddItemModal);
-            document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
-            document.getElementById('showImportModalBtn')?.addEventListener('click', showImportModal);
-            document.getElementById('sampleDataBtn')?.addEventListener('click', initializeWithSampleData);
+            document.getElementById('showAddItemModalBtn').addEventListener('click', showAddItemModal);
+            document.getElementById('exportDataBtn').addEventListener('click', exportData);
+            document.getElementById('showImportModalBtn').addEventListener('click', showImportModal);
+            document.getElementById('sampleDataBtn').addEventListener('click', initializeWithSampleData);
 
             // Search and filters
-            document.getElementById('searchInput')?.addEventListener('input', filterAndSearch);
-            document.getElementById('locationFilter')?.addEventListener('change', filterAndSearch);
-            document.getElementById('categoryFilter')?.addEventListener('change', filterAndSearch);
-            document.getElementById('stockFilter')?.addEventListener('change', filterAndSearch);
-            document.getElementById('sortByNameBtn')?.addEventListener('click', () => sortItems('name'));
-            document.getElementById('sortByQuantityBtn')?.addEventListener('click', () => sortItems('quantity'));
-            document.getElementById('sortByLocationBtn')?.addEventListener('click', () => sortItems('location'));
-            document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
+            document.getElementById('searchInput').addEventListener('input', filterAndSearch);
+            document.getElementById('locationFilter').addEventListener('change', filterAndSearch);
+            document.getElementById('categoryFilter').addEventListener('change', filterAndSearch);
+            document.getElementById('stockFilter').addEventListener('change', filterAndSearch);
+            document.getElementById('sortByNameBtn').addEventListener('click', () => sortItems('name'));
+            document.getElementById('sortByQuantityBtn').addEventListener('click', () => sortItems('quantity'));
+            document.getElementById('sortByLocationBtn').addEventListener('click', () => sortItems('location'));
+            document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
             // Item management modals
-            document.getElementById('itemForm')?.addEventListener('submit', handleItemSubmit);
-            document.getElementById('closeItemModalBtn')?.addEventListener('click', closeItemModal);
-            document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDelete);
-            document.getElementById('closeDeleteModalBtn')?.addEventListener('click', closeDeleteModal);
+            document.getElementById('itemForm').addEventListener('submit', handleItemSubmit);
+            document.getElementById('closeItemModalBtn').addEventListener('click', closeItemModal);
+            document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+            document.getElementById('closeDeleteModalBtn').addEventListener('click', closeDeleteModal);
 
             // CSV Import
-            document.getElementById('importFile')?.addEventListener('change', previewCSV);
-            document.getElementById('importBtn')?.addEventListener('click', importData);
-            document.getElementById('closeImportModalBtn')?.addEventListener('click', closeImportModal);
+            document.getElementById('importFile').addEventListener('change', previewCSV);
+            document.getElementById('importBtn').addEventListener('click', importData);
+            document.getElementById('closeImportModalBtn').addEventListener('click', closeImportModal);
         }
 
-        // Start the application
-        init();
+        // Start the application only after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
