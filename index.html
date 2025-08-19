@@ -424,6 +424,13 @@
             }
         }
 
+        // Make functions globally accessible for onclick handlers
+        window.handleLogin = handleLogin;
+        window.handleSignup = handleSignup;
+        window.showLoginForm = showLoginForm;
+        window.showSignupForm = showSignupForm;
+        window.handleLogout = handleLogout;
+
         function updateConnectionStatus(status, type) {
             const statusEl = document.getElementById('connectionStatus');
             statusEl.className = `badge badge-${type} badge-sm`;
