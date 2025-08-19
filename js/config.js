@@ -83,9 +83,22 @@ Need help? Check the README or contact support.
     }
     
     isConfigured() {
-        return !this.config.supabase.url?.includes('your_') && 
-               !this.config.supabase.key?.includes('your_') &&
-               !this.config.userbase.appId?.includes('your_');
+        const supabaseUrl = this.config.supabase.url;
+        const supabaseKey = this.config.supabase.key;
+        const userbaseAppId = this.config.userbase.appId;
+        
+        return supabaseUrl && 
+               supabaseKey && 
+               userbaseAppId &&
+               typeof supabaseUrl === 'string' &&
+               typeof supabaseKey === 'string' &&
+               typeof userbaseAppId === 'string' &&
+               supabaseUrl !== 'undefined' &&
+               supabaseKey !== 'undefined' &&
+               userbaseAppId !== 'undefined' &&
+               !supabaseUrl.includes('your_') && 
+               !supabaseKey.includes('your_') &&
+               !userbaseAppId.includes('your_');
     }
 }
 
