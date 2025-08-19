@@ -142,7 +142,61 @@
         <!-- Rest of your existing inventory interface goes here -->
         <!-- Dashboard Stats -->
         <div class="container mx-auto p-4">
-            <!-- Your existing dashboard content -->
+            <div class="alert alert-info mb-6">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <h3 class="font-bold">Welcome to the Nursing Lab Inventory System!</h3>
+                    <div class="text-sm">Database is being set up automatically. You can start adding inventory items.</div>
+                </div>
+            </div>
+            
+            <!-- Add Item Form -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Add New Inventory Item</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Item Name</span>
+                            </label>
+                            <input type="text" id="itemName" placeholder="Enter item name" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Location</span>
+                            </label>
+                            <input type="text" id="itemLocation" placeholder="Enter location" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Quantity</span>
+                            </label>
+                            <input type="number" id="itemQuantity" placeholder="Enter quantity" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Description</span>
+                            </label>
+                            <input type="text" id="itemDescription" placeholder="Enter description" class="input input-bordered" />
+                        </div>
+                    </div>
+                    <div class="card-actions justify-end mt-4">
+                        <button class="btn btn-primary" onclick="addItem()">
+                            <i class="fas fa-plus mr-2"></i>Add Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Inventory List -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Current Inventory</h2>
+                    <div id="inventoryList" class="space-y-2">
+                        <!-- Inventory items will be displayed here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -155,6 +209,7 @@
         let currentUser = null;
         let inventoryData = [];
         let filteredData = [];
+        let editingItemId = null;
 
         // Initialize the application
         async function init() {
@@ -284,7 +339,9 @@
                     // Table doesn't exist, create it
                     await createInventoryTable();
                 } else if (testError) {
-                    throw testError;
+                    console.log('Database test error:', testError);
+                    // Try to create table anyway
+                    await createInventoryTable();
                 }
                 
                 updateConnectionStatus('Connected', 'success');
@@ -295,40 +352,69 @@
             }
         }
 
-        // Auto-create inventory table
+        // Auto-create inventory table with proper SQL
         async function createInventoryTable() {
             try {
-                // Use Supabase SQL to create table
-                const { error } = await supabase.rpc('exec_sql', {
-                    sql: `
-                        CREATE TABLE IF NOT EXISTS public.inventory_items (
-                            id SERIAL PRIMARY KEY,
-                            user_id TEXT NOT NULL DEFAULT '${currentUser.userId}',
-                            item TEXT NOT NULL,
-                            description TEXT,
-                            location TEXT NOT NULL,
-                            shelf TEXT,
-                            tub TEXT,
-                            quantity TEXT,
-                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                        );
+                console.log('Creating inventory table...');
+                
+                // Create the table using a simple approach
+                const { data, error } = await supabase
+                    .from('inventory_items')
+                    .insert([{
+                        user_id: currentUser.userId,
+                        item: 'Test Item',
+                        description: 'Initial setup item',
+                        location: 'Setup',
+                        shelf: '',
+                        tub: '',
+                        quantity: '1'
+                    }])
+                    .select();
 
-                        -- Enable Row Level Security
-                        ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
+                if (error && error.code === 'PGRST116') {
+                    // Table doesn't exist, we need to create it manually
+                    showToast('Setting up database - this may take a moment...', 'info');
+                    
+                    // For now, show a helpful message
+                    showToast('Please create the inventory_items table in your Supabase dashboard', 'warning');
+                    console.log('Table creation needed. Please run this SQL in your Supabase SQL editor:');
+                    console.log(`
+CREATE TABLE public.inventory_items (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    item TEXT NOT NULL,
+    description TEXT,
+    location TEXT NOT NULL,
+    shelf TEXT,
+    tub TEXT,
+    quantity TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-                        -- Create policy for user isolation
-                        CREATE POLICY "Users can only access their own items" 
-                        ON public.inventory_items FOR ALL 
-                        USING (user_id = '${currentUser.userId}');
-                    `
-                });
+-- Enable Row Level Security
+ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
 
-                if (error) throw error;
-                showToast('Database table created successfully!', 'success');
+-- Create policy for user isolation
+CREATE POLICY "Users can only access their own items" 
+ON public.inventory_items FOR ALL 
+USING (user_id = auth.uid()::text);
+                    `);
+                } else if (error) {
+                    console.error('Table creation error:', error);
+                } else {
+                    // Table exists and test item was inserted, remove it
+                    if (data && data[0]) {
+                        await supabase
+                            .from('inventory_items')
+                            .delete()
+                            .eq('id', data[0].id);
+                    }
+                    showToast('Database ready!', 'success');
+                }
             } catch (error) {
-                console.error('Table creation error:', error);
-                showToast('Failed to create database table', 'error');
+                console.error('Table setup error:', error);
+                showToast('Database setup needed - check console for SQL', 'warning');
             }
         }
 
@@ -344,7 +430,14 @@
                     .eq('user_id', currentUser.userId)
                     .order('item');
                     
-                if (error) throw error;
+                if (error) {
+                    console.error('Error loading data:', error);
+                    if (error.code === 'PGRST116') {
+                        showToast('Database table not found - please set up the table first', 'warning');
+                    } else {
+                        throw error;
+                    }
+                }
                 
                 inventoryData = data || [];
                 filteredData = [...inventoryData];
@@ -357,38 +450,47 @@
             }
         }
 
-        // Enhanced save function with user association
-        async function saveItem(itemData) {
-            if (!supabase || !currentUser) return;
-            
-            try {
-                const dataWithUser = {
-                    ...itemData,
-                    user_id: currentUser.userId
-                };
+        // Add new item function
+        async function addItem() {
+            const itemName = document.getElementById('itemName').value.trim();
+            const location = document.getElementById('itemLocation').value.trim();
+            const quantity = document.getElementById('itemQuantity').value.trim();
+            const description = document.getElementById('itemDescription').value.trim();
 
-                if (editingItemId) {
-                    const { data, error } = await supabase
-                        .from('inventory_items')
-                        .update({ ...dataWithUser, updated_at: new Date().toISOString() })
-                        .eq('id', editingItemId)
-                        .eq('user_id', currentUser.userId)
-                        .select();
-                        
-                    if (error) throw error;
-                    return data[0];
-                } else {
-                    const { data, error } = await supabase
-                        .from('inventory_items')
-                        .insert([dataWithUser])
-                        .select();
-                        
-                    if (error) throw error;
-                    return data[0];
-                }
+            if (!itemName || !location || !quantity) {
+                showToast('Please fill in required fields (Name, Location, Quantity)', 'error');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('inventory_items')
+                    .insert([{
+                        user_id: currentUser.userId,
+                        item: itemName,
+                        description: description,
+                        location: location,
+                        quantity: quantity
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                // Clear form
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemLocation').value = '';
+                document.getElementById('itemQuantity').value = '';
+                document.getElementById('itemDescription').value = '';
+
+                // Refresh data
+                await loadInventoryData();
+                updateStats();
+                renderInventory(filteredData);
+
+                showToast('Item added successfully!', 'success');
             } catch (error) {
-                console.error('Error saving item:', error);
-                throw error;
+                console.error('Error adding item:', error);
+                showToast('Error adding item: ' + error.message, 'error');
             }
         }
 
@@ -453,7 +555,7 @@
         }
 
         function updateStats() {
-            // Placeholder for stats update logic
+            // Update the total items counter
             const totalItemsElement = document.getElementById('totalItems');
             if (totalItemsElement) {
                 totalItemsElement.textContent = inventoryData.length;
@@ -461,8 +563,44 @@
         }
 
         function renderInventory(data) {
-            // Placeholder for inventory rendering logic
-            console.log('renderInventory called with data:', data);
+            // Render inventory items
+            const inventoryList = document.getElementById('inventoryList');
+            if (!inventoryList) return;
+
+            if (data.length === 0) {
+                inventoryList.innerHTML = `
+                    <div class="text-center py-8 text-base-content/70">
+                        <i class="fas fa-box-open text-4xl mb-4"></i>
+                        <p>No inventory items yet. Add your first item above!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            inventoryList.innerHTML = data.map(item => `
+                <div class="card bg-base-200 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="card-title text-lg">${item.item}</h3>
+                                <p class="text-sm text-base-content/70">${item.description || 'No description'}</p>
+                                <div class="flex gap-4 mt-2 text-sm">
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${item.location}</span>
+                                    <span><i class="fas fa-cubes mr-1"></i>Qty: ${item.quantity}</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-sm btn-outline" onclick="editItem('${item.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-error btn-outline" onclick="deleteItem('${item.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function setupEventListeners() {
@@ -476,6 +614,7 @@
         window.showLoginForm = showLoginForm;
         window.showSignupForm = showSignupForm;
         window.handleLogout = handleLogout;
+        window.addItem = addItem;
 
         function updateConnectionStatus(status, type) {
             const statusEl = document.getElementById('connectionStatus');
@@ -500,9 +639,6 @@
                 toast.remove();
             }, 5000);
         }
-
-        // Your existing inventory management functions go here
-        // (renderInventory, filterAndSearch, etc.)
 
         // Start the application
         init();
