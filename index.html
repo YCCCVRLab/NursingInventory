@@ -159,10 +159,9 @@
                 }
                 
                 // Initialize Userbase
-                await userbase.init({ appId: CONFIG.userbase.appId });
+                const session = await userbase.init({ appId: CONFIG.userbase.appId });
                 
                 // Check if user is already signed in
-                const session = await userbase.getSession();
                 if (session.user) {
                     await handleSuccessfulAuth(session.user);
                 } else {
