@@ -992,7 +992,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                     return data[0];
                 }
             } catch (error) {
-                console.error('Error saving item:&#x27;, error);
+                console.error('Error saving item:', error);
                 throw error;
             }
         }
@@ -1097,8 +1097,6 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 loading.classList.add('hidden');
                 if (signupForm.classList.contains('hidden')) {
                     loginForm.classList.remove('hidden');
-                } else {
-                    signupForm.classList.remove('hidden');
                 }
             }
         }
