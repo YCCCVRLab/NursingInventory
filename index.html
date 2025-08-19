@@ -548,6 +548,699 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                     <i class="fas fa-trash mr-2"></i>Delete
                 </button>
                 <button class="btn" id="closeDeleteModalBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications - From old HTML -->
+    <div id="toastContainer" class="toast toast-top toast-end z-50">
+        <!-- Toasts will be added here dynamically -->
+    </div>
+
+    <script type="module">
+        // Get configuration from secure config manager
+        const CONFIG = window.AppConfig.get();
+
+        // Global variables
+        let supabase = null;
+        let currentUser = null; // Still needed for Userbase auth context
+        let inventoryData = [];
+        let filteredData = [];
+        let currentSort = null;
+        let editingItemId = null;
+        let deleteItemId = null;
+        let demoMode = false;
+        let csvData = null;
+
+        // Column mapping for flexible CSV import
+        const columnMappings = {
+            // Item name variations
+            'item': 'item',
+            'item name': 'item',
+            'name': 'item',
+            'product': 'item',
+            
+            // Description variations
+            'description': 'description',
+            'desc': 'description',
+            'details': 'description',
+            'notes': 'description',
+            
+            // Location variations
+            'location': 'location',
+            'loc': 'location',
+            'storage': 'location',
+            'area': 'location',
+            
+            // Shelf variations
+            'shelf': 'shelf',
+            'shelf #/drawer #': 'shelf',
+            'shelf/drawer': 'shelf',
+            'drawer': 'shelf',
+            'position': 'shelf',
+            
+            // Tub variations
+            'tub': 'tub',
+            'tub #': 'tub',
+            'tub number': 'tub',
+            'container': 'tub',
+            'bin': 'tub',
+            
+            // Quantity variations
+            'quantity': 'quantity',
+            'qty': 'quantity',
+            'amount': 'quantity',
+            'count': 'quantity',
+            'stock': 'quantity'
+        };
+
+        // --- UI Helper Functions (grouped at top for clarity) ---
+        function showAuthScreen() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+        }
+
+        function showSignupForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        }
+
+        function showAuthLoading(show) {
+            const loading = document.getElementById('authLoading');
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            if (show) {
+                loading.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                signupForm.classList.add('hidden');
+            } else {
+                loading.classList.add('hidden');
+                if (signupForm.classList.contains('hidden')) {
+                    loginForm.classList.remove('hidden');
+                } else {
+                    signupForm.classList.remove('hidden');
+                }
+            }
+        }
+
+        function showDatabaseSetup() {
+            // Populate modal fields with current CONFIG values if available
+            if (CONFIG.supabase.url && !CONFIG.supabase.url.includes('your_')) {
+                document.getElementById('supabaseUrl').value = CONFIG.supabase.url;
+            }
+            if (CONFIG.supabase.key && !CONFIG.supabase.key.includes('your_')) {
+                document.getElementById('supabaseKey').value = CONFIG.supabase.key;
+            }
+            if (CONFIG.userbase.appId && !CONFIG.userbase.appId.includes('your_')) {
+                document.getElementById('userbaseAppId').value = CONFIG.userbase.appId;
+            }
+            
+            document.getElementById('demoMode').checked = demoMode;
+            toggleDemoModeFields(); // Adjust visibility based on demo mode
+            document.getElementById('databaseSetupModal').classList.add('modal-open');
+        }
+
+        function closeDatabaseSetup() {
+            document.getElementById('databaseSetupModal').classList.remove('modal-open');
+        }
+        
+        function toggleDemoModeFields() {
+            const supabaseFields = document.getElementById('supabaseConfigFields');
+            const userbaseField = document.getElementById('userbaseAppId');
+            const demoCheckbox = document.getElementById('demoMode');
+
+            if (demoCheckbox.checked) {
+                supabaseFields.classList.add('hidden');
+                userbaseField.closest('.form-control').classList.add('hidden');
+            } else {
+                supabaseFields.classList.remove('hidden');
+                userbaseField.closest('.form-control').classList.remove('hidden');
+            }
+        }
+
+        function updateConnectionStatus(status, type) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `badge badge-${type} badge-sm`;
+            statusEl.innerHTML = `<i class="fas fa-${type === 'success' ? 'wifi' : type === 'warning' ? 'exclamation-triangle' : 'times'} mr-1"></i>${status}`;
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loadingIndicator');
+            const grid = document.getElementById('inventoryGrid');
+            
+            if (show) {
+                loading.classList.remove('hidden');
+                grid.classList.add('loading'); // Apply a class to dim/disable grid
+            } else {
+                loading.classList.add('hidden');
+                grid.classList.remove('loading');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} shadow-lg mb-2 fade-in`;
+            toast.innerHTML = `
+                <div>
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation-triangle' : 'info'}-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // --- Core UI Rendering/Filtering/Sorting Functions ---
+        function categorizeItem(item) {
+            const itemName = item.item.toLowerCase();
+            const description = item.description?.toLowerCase() || '';
+            
+            if (itemName.includes('gauze') || itemName.includes('pad') || itemName.includes('sponge')) {
+                return 'Gauze & Pads';
+            } else if (itemName.includes('tape') || itemName.includes('adhesive')) {
+                return 'Tape & Adhesives';
+            } else if (itemName.includes('dressing') || itemName.includes('bandage') || itemName.includes('tefla')) {
+                return 'Dressings & Bandages';
+            } else if (itemName.includes('surgical') || itemName.includes('sterile') || itemName.includes('staple') || itemName.includes('suture')) {
+                return 'Surgical Supplies';
+            } else if (itemName.includes('drain') || itemName.includes('tube') || itemName.includes('catheter')) {
+                return 'Drains & Tubes';
+            } else if (itemName.includes('measuring') || itemName.includes('scissors') || itemName.includes('tray')) {
+                return 'Tools & Equipment';
+            } else if (itemName.includes('cotton') || itemName.includes('swab') || itemName.includes('alcohol') || itemName.includes('prep')) {
+                return 'Cleaning & Prep';
+            } else if (itemName.includes('glove') || itemName.includes('protection')) {
+                return 'Protection';
+            } else {
+                return 'Other Supplies';
+            }
+        }
+
+        function getStockLevel(quantity) {
+            if (!quantity || quantity === '') return 'empty';
+            
+            const numericValue = parseInt(quantity.toString().replace(/[^\d]/g, ''));
+            
+            if (isNaN(numericValue) || numericValue === 0) return 'empty';
+            if (numericValue <= 5) return 'low';
+            if (numericValue <= 20) return 'medium';
+            return 'high';
+        }
+
+        function getStockClass(level) {
+            switch(level) {
+                case 'low': return 'low-stock';
+                case 'medium': return 'medium-stock';
+                case 'high': return 'high-stock';
+                default: return '';
+            }
+        }
+
+        function getStockBadge(level) {
+            switch(level) {
+                case 'low': return '<span class="badge badge-error badge-sm">Low Stock</span>';
+                case 'medium': return '<span class="badge badge-warning badge-sm">Medium</span>';
+                case 'high': return '<span class="badge badge-success badge-sm">In Stock</span>';
+                default: return '<span class="badge badge-ghost badge-sm">No Qty</span>';
+            }
+        }
+
+        function highlightText(text, searchTerm) {
+            if (!searchTerm) return text;
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        function renderInventory(data) {
+            const grid = document.getElementById('inventoryGrid');
+            const noResults = document.getElementById('noResults');
+            const searchTerm = document.getElementById('searchInput').value;
+
+            if (data.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                document.getElementById('resultCount').textContent = 0; // Update result count
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            
+            grid.innerHTML = data.map(item => {
+                const category = categorizeItem(item);
+                const stockLevel = getStockLevel(item.quantity);
+                const stockClass = getStockClass(stockLevel);
+                const stockBadge = getStockBadge(stockLevel);
+                
+                const fullLocation = `${item.location}${item.shelf ? ' - ' + item.shelf : ''}${item.tub ? ' (Tub ' + item.tub + ')' : ''}`;
+                
+                return `
+                    <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow ${stockClass} fade-in">
+                        <div class="card-body p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="card-title text-sm font-bold">
+                                    ${highlightText(item.item, searchTerm)}
+                                </h3>
+                                ${stockBadge}
+                            </div>
+                            
+                            ${item.description ? `
+                                <p class="text-xs text-base-content opacity-70 mb-2">
+                                    ${highlightText(item.description, searchTerm)}
+                                </p>
+                            ` : ''}
+                            
+                            <div class="space-y-1 text-xs">
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt text-primary mr-2"></i>
+                                    <span class="truncate">${fullLocation}</span>
+                                </div>
+                                
+                                <div class="flex items-center">
+                                    <i class="fas fa-boxes text-secondary mr-2"></i>
+                                    <span class="font-semibold">
+                                        ${item.quantity || 'Not specified'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="card-actions justify-between items-center mt-3">
+                                <div class="badge badge-outline category-badge">
+                                    ${category}
+                                </div>
+                                <div class="flex gap-1">
+                                    <button class="btn btn-xs btn-primary edit-item-btn" data-id="${item.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-error delete-item-btn" data-id="${item.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('resultCount').textContent = data.length;
+
+            // Re-attach event listeners for dynamically rendered buttons
+            document.querySelectorAll('.edit-item-btn').forEach(button => {
+                button.addEventListener('click', (event) => showEditItemModal(parseInt(event.currentTarget.dataset.id)));
+            });
+            document.querySelectorAll('.delete-item-btn').forEach(button => {
+                button.addEventListener('click', (event) => showDeleteModal(parseInt(event.currentTarget.dataset.id)));
+            });
+        }
+
+        function populateFilters() {
+            const locations = [...new Set(inventoryData.map(item => item.location))].sort();
+            const categories = [...new Set(inventoryData.map(item => categorizeItem(item)))];
+
+            const locationSelect = document.getElementById('locationFilter');
+            const categorySelect = document.getElementById('categoryFilter');
+
+            locationSelect.innerHTML = '<option value="">All Locations</option>';
+            categorySelect.innerHTML = '<option value="">All Categories</option>';
+
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                locationSelect.appendChild(option);
+            });
+
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        function updateStats() {
+            const totalItems = inventoryData.length;
+            const locations = [...new Set(inventoryData.map(item => item.location))];
+            const categories = [...new Set(inventoryData.map(item => categorizeItem(item)))];
+            const lowStockItems = inventoryData.filter(item => getStockLevel(item.quantity) === 'low').length;
+
+            document.getElementById('totalItems').textContent = totalItems;
+            document.getElementById('statTotal').textContent = totalItems;
+            document.getElementById('statLowStock').textContent = lowStockItems;
+            document.getElementById('statLocations').textContent = locations.length;
+            document.getElementById('statCategories').textContent = categories.length;
+            document.getElementById('totalCount').textContent = totalItems;
+            document.getElementById('resultCount').textContent = filteredData.length;
+        }
+
+        function filterAndSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const locationFilter = document.getElementById('locationFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const stockFilter = document.getElementById('stockFilter').value;
+
+            filteredData = inventoryData.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    item.item.toLowerCase().includes(searchTerm) ||
+                    (item.description && item.description.toLowerCase().includes(searchTerm));
+
+                const matchesLocation = !locationFilter || item.location === locationFilter;
+                const matchesCategory = !categoryFilter || categorizeItem(item) === categoryFilter;
+                const stockLevel = getStockLevel(item.quantity);
+                const matchesStock = !stockFilter || stockLevel === stockFilter;
+
+                return matchesSearch && matchesLocation && matchesCategory && matchesStock;
+            });
+
+            if (currentSort) {
+                sortItems(currentSort, false); // Don't re-render, sortItems will call renderInventory
+            } else {
+                renderInventory(filteredData);
+            }
+            updateStats(); // Update stats after filtering
+        }
+
+        function sortItems(sortBy, render = true) {
+            currentSort = sortBy;
+            
+            filteredData.sort((a, b) => {
+                switch(sortBy) {
+                    case 'name':
+                        return a.item.localeCompare(b.item);
+                    case 'quantity':
+                        const qtyA = parseInt(a.quantity?.toString().replace(/[^\d]/g, '') || '0');
+                        const qtyB = parseInt(b.quantity?.toString().replace(/[^\d]/g, '') || '0');
+                        return qtyB - qtyA; // Descending for quantity
+                    case 'location':
+                        return a.location.localeCompare(b.location);
+                    default:
+                        return 0;
+                }
+            });
+
+            if (render) {
+                renderInventory(filteredData);
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('locationFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('stockFilter').value = '';
+            currentSort = null;
+            filteredData = [...inventoryData];
+            renderInventory(filteredData);
+            updateStats(); // Update stats after reset
+        }
+
+        // --- Data Handling Functions ---
+        async function loadInventoryData() {
+            if (demoMode) {
+                await loadFromLocalStorage();
+                return;
+            }
+            
+            if (!supabase) {
+                showToast('Database not connected. Please configure in settings.', 'error');
+                showDatabaseSetup();
+                return;
+            }
+
+            showLoading(true);
+            try {
+                // Load ALL inventory items (shared across all users)
+                const { data, error } = await supabase
+                    .from('inventory_items')
+                    .select('*')
+                    .order('item');
+                    
+                if (error) {
+                    console.error('Error loading data:', error);
+                    if (error.code === 'PGRST116') {
+                        showToast('Database table not found - please contact administrator or use setup modal', 'warning');
+                        showDatabaseSetup();
+                    } else {
+                        throw error;
+                    }
+                }
+                
+                inventoryData = data || [];
+                filteredData = [...inventoryData];
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Error loading inventory data: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveItem(itemData) {
+            if (demoMode) {
+                return saveToLocalStorage(itemData);
+            }
+            
+            if (!supabase) {
+                showToast('Database not connected. Please configure in settings.', 'error');
+                showDatabaseSetup();
+                throw new Error('Database not connected');
+            }
+
+            try {
+                // Ensure user_id is set to the shared ID
+                itemData.user_id = 'yccc-shared'; 
+
+                if (editingItemId) {
+                    const { data, error } = await supabase
+                        .from('inventory_items')
+                        .update({ ...itemData, updated_at: new Date().toISOString() })
+                        .eq('id', editingItemId)
+                        .select(); // Select the updated row
+                        
+                    if (error) throw error;
+                    return data[0];
+                } else {
+                    const { data, error } = await supabase
+                        .from('inventory_items')
+                        .insert([itemData])
+                        .select(); // Select the inserted row
+                        
+                    if (error) throw error;
+                    return data[0];
+                }
+            } catch (error) {
+                console.error('Error saving item:', error);
+                throw error;
+            }
+        }
+
+        async function deleteItem(id) {
+            if (demoMode) {
+                await deleteFromLocalStorage(id);
+                return;
+            }
+            
+            if (!supabase) {
+                showToast('Database not connected. Please configure in settings.', 'error');
+                showDatabaseSetup();
+                throw new Error('Database not connected');
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('inventory_items')
+                    .delete()
+                    .eq('id', id);
+                    
+                if (error) throw error;
+                
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                throw error;
+            }
+        }
+
+        // --- Local Storage Functions (for Demo Mode) ---
+        async function loadFromLocalStorage() {
+            const stored = localStorage.getItem('inventoryData');
+            if (stored) {
+                inventoryData = JSON.parse(stored);
+            } else {
+                inventoryData = getSampleData();
+                localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
+            }
+            filteredData = [...inventoryData];
+        }
+
+        async function saveToLocalStorage(itemData) {
+            if (editingItemId) {
+                const index = inventoryData.findIndex(item => item.id === editingItemId);
+                if (index !== -1) {
+                    inventoryData[index] = { ...inventoryData[index], ...itemData, updated_at: new Date().toISOString() };
+                }
+            } else {
+                const newItem = {
+                    id: Date.now(),
+                    ...itemData,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                inventoryData.push(newItem);
+            }
+            
+            localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
+            filteredData = [...inventoryData];
+            return inventoryData[inventoryData.length - 1];
+        }
+
+        async function deleteFromLocalStorage(id) {
+            inventoryData = inventoryData.filter(item => item.id !== id);
+            localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
+            filteredData = [...inventoryData];
+        }
+
+        function getSampleData() {
+            return [
+                {"item": "ABD Pads", "description": "", "location": "Storage Shelf # 1", "shelf": "Shelf # 2", "tub": "7", "quantity": "2"},
+                {"item": "ABD Pads", "description": "", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "24"},
+                {"item": "ABD Pads", "description": "8&quot; X 10&quot;", "location": "Wound Care Cart", "shelf": "Right Drawer # 6", "tub": "", "quantity": "5"},
+                {"item": "Adhesive Bandage", "description": "Wound Closure", "location": "Wound Care Cart", "shelf": "Right Drawer # 1", "tub": "", "quantity": "19"},
+                {"item": "Gauze Pads", "description": "3 X 3", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "175"},
+                {"item": "Sterile Saline", "description": "100 ml for wounds", "location": "Storage Shelf # 1", "shelf": "Top of shelving", "tub": "", "quantity": "12"},
+                {"item": "Tape Surgical Paper", "description": "1&quot;", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "33 rolls"}
+            ];
+        }
+
+        // --- Authentication & Initialization Functions ---
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showToast('Please enter both username and password', 'error');
+                return;
+            }
+
+            showAuthLoading(true);
+            try {
+                const user = await userbase.signIn({ username, password });
+                await handleSuccessfulAuth(user);
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed: ' + error.message, 'error');
+            } finally {
+                showAuthLoading(false);
+            }
+        }
+
+        async function handleSignup() {
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!username || !password || !confirmPassword) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            showAuthLoading(true);
+            try {
+                const user = await userbase.signUp({ username, password });
+                await handleSuccessfulAuth(user);
+                showToast('Account created successfully! Welcome to YCCC Nursing Lab.', 'success');
+            } catch (error) {
+                console.error('Signup error:', error);
+                showToast('Signup failed: ' + error.message, 'error');
+            } finally {
+                showAuthLoading(false);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await userbase.signOut();
+                currentUser = null;
+                supabase = null;
+                inventoryData = [];
+                filteredData = [];
+                showAuthScreen();
+                showToast('Signed out successfully', 'info');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Error signing out', 'error');
+            }
+        }
+
+        async function handleSuccessfulAuth(user) {
+            currentUser = user;
+            document.getElementById('currentUser').textContent = user.username;
+            
+            // Initialize Supabase with auto-connection
+            await initializeSupabase();
+            
+            // Show main app
+            showMainApp();
+            
+            // Load inventory data (shared for all users)
+            await loadInventoryData();
+            populateFilters();
+            updateStats();
+            renderInventory(filteredData);
+            setupEventListeners();
+        }
+
+        async function initializeSupabase() {
+            try {
+                supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.key);
+                
+                // Test connection
+                const { data: testData, error: testError } = await supabase
+                    .from('inventory_items')
+                    .select('count')
+                    .limit(1);
+                
+                if (testError && testError.code === 'PGRST116') {
+                    showToast('Database table not found - please contact administrator or use setup modal', 'warning');
+                    // Optionally show setup modal if table not found
+                    showDatabaseSetup();
+                } else if (testError) {
+                    console.log('Database test error:', testError);
+                    showToast('Database connection issue: ' + testError.message, 'error');
+                    // Optionally show setup modal if there's a connection issue
+                    showDatabaseSetup();
+                }
+                
+                updateConnectionStatus('Connected', 'success');
+            } catch (error) {
+                console.error('Database connection error:', error);
+                updateConnectionStatus('Connection Failed', 'error');
+                showToast('Database connection failed: ' + error.message, 'error');
             }
         }
 
