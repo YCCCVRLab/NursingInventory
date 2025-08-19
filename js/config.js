@@ -17,37 +17,56 @@ class Config {
     getEnvVar(name) {
         // Try multiple sources for environment variables
         
-        // 1. Vite injected variables (prefixed with VITE_)
+        // 1. Vite injected variables (prefixed with VITE_) - PRIORITY
         if (typeof import.meta !== 'undefined' && import.meta.env) {
-            const viteVar = import.meta.env[`VITE_${name}`] || import.meta.env[name];
-            if (viteVar && viteVar !== 'undefined') {
+            const viteVar = import.meta.env[`VITE_${name}`];
+            if (viteVar && viteVar !== 'undefined' && viteVar !== '') {
+                console.log(`Found VITE_${name}:`, viteVar.substring(0, 10) + '...');
                 return viteVar;
+            }
+            
+            // Also try without VITE_ prefix
+            const regularVar = import.meta.env[name];
+            if (regularVar && regularVar !== 'undefined' && regularVar !== '') {
+                console.log(`Found ${name}:`, regularVar.substring(0, 10) + '...');
+                return regularVar;
             }
         }
         
-        // 2. Build-time injected variables
+        // 2. Build-time injected variables (for GitHub Actions)
         const envVars = window.__ENV__ || {};
+        if (envVars[`VITE_${name}`] && envVars[`VITE_${name}`] !== 'undefined') {
+            return envVars[`VITE_${name}`];
+        }
         if (envVars[name] && envVars[name] !== 'undefined') {
             return envVars[name];
         }
         
         // 3. Process env (Node.js environments)
-        if (typeof process !== 'undefined' && process.env && process.env[name]) {
-            return process.env[name];
+        if (typeof process !== 'undefined' && process.env) {
+            if (process.env[`VITE_${name}`]) {
+                return process.env[`VITE_${name}`];
+            }
+            if (process.env[name]) {
+                return process.env[name];
+            }
         }
         
         // 4. For development/testing - you can temporarily hardcode values here
         // REMOVE THESE BEFORE PRODUCTION!
         const developmentDefaults = {
+            // Uncomment and add your values for local development:
             // 'SUPABASE_URL': 'https://your-project.supabase.co',
             // 'SUPABASE_ANON_KEY': 'your_key_here',
             // 'USERBASE_APP_ID': 'your_app_id_here'
         };
         
         if (developmentDefaults[name]) {
+            console.log(`Using development default for ${name}`);
             return developmentDefaults[name];
         }
         
+        console.warn(`Environment variable ${name} not found. Tried: VITE_${name}, ${name}`);
         return undefined;
     }
     
@@ -72,6 +91,8 @@ class Config {
         if (missing.length > 0) {
             console.warn('Missing or placeholder configuration values:', missing);
             this.showConfigurationHelp();
+        } else {
+            console.log('✅ Configuration loaded successfully');
         }
     }
     
@@ -83,26 +104,28 @@ class Config {
         const helpMessage = `
 🔧 Configuration Setup Required
 
-Please set up your environment variables:
+Please set up your environment variables using one of these methods:
 
-1. Supabase Setup:
-   - Go to https://supabase.com
-   - Create a new project or use existing one
-   - Go to Settings > API
-   - Copy your Project URL and anon/public key
+METHOD 1: GitHub Repository Secrets (Recommended for deployment)
+1. Go to your GitHub repository settings
+2. Navigate to Secrets and variables → Actions
+3. Add these repository secrets:
+   - VITE_SUPABASE_URL = https://your-project.supabase.co
+   - VITE_SUPABASE_ANON_KEY = your_supabase_anon_key
+   - VITE_USERBASE_APP_ID = your_userbase_app_id
 
-2. Userbase Setup:
-   - Go to https://userbase.com
-   - Create an account and new app
-   - Copy your App ID
+METHOD 2: Local .env file (For local development)
+1. Update your .env file with actual values:
+   VITE_SUPABASE_URL=https://your-actual-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your_actual_anon_key
+   VITE_USERBASE_APP_ID=your_actual_app_id
 
-3. Update your .env file with the actual values:
-   SUPABASE_URL=https://your-actual-project.supabase.co
-   SUPABASE_ANON_KEY=your_actual_anon_key
-   USERBASE_APP_ID=your_actual_app_id
+METHOD 3: Development defaults (Temporary)
+1. Edit js/config.js and uncomment the developmentDefaults values
 
-4. For development, you can temporarily add values in js/config.js
-   (Look for developmentDefaults object)
+Setup Instructions:
+• Supabase: https://supabase.com → Settings → API
+• Userbase: https://userbase.com → Create app → Copy App ID
 
 Need help? Check the README or contact support.
         `;
@@ -120,11 +143,11 @@ Need help? Check the README or contact support.
                         <div>
                             <h3 class="font-bold">Configuration Required</h3>
                             <div class="text-xs mt-2">
-                                <p>Please set up your credentials:</p>
+                                <p><strong>Quick Fix:</strong> Add secrets in GitHub repository settings</p>
                                 <ul class="list-disc list-inside mt-1">
-                                    <li>Create accounts at <a href="https://supabase.com" target="_blank" class="link">Supabase</a> and <a href="https://userbase.com" target="_blank" class="link">Userbase</a></li>
-                                    <li>Update the .env file with your actual credentials</li>
-                                    <li>See README.md for detailed instructions</li>
+                                    <li>Go to Settings → Secrets and variables → Actions</li>
+                                    <li>Add: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_USERBASE_APP_ID</li>
+                                    <li>Get credentials from <a href="https://supabase.com" target="_blank" class="link">Supabase</a> and <a href="https://userbase.com" target="_blank" class="link">Userbase</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -143,7 +166,7 @@ Need help? Check the README or contact support.
         const supabaseKey = this.config.supabase.key;
         const userbaseAppId = this.config.userbase.appId;
         
-        return supabaseUrl && 
+        const isValid = supabaseUrl && 
                supabaseKey && 
                userbaseAppId &&
                typeof supabaseUrl === 'string' &&
@@ -158,6 +181,9 @@ Need help? Check the README or contact support.
                !supabaseUrl.includes('your-project.supabase.co') &&
                !supabaseKey.includes('your_supabase_') &&
                !userbaseAppId.includes('your_userbase_');
+               
+        console.log('Configuration status:', isValid ? '✅ Valid' : '❌ Invalid');
+        return isValid;
     }
     
     // Helper method to get configuration status
@@ -172,6 +198,7 @@ Need help? Check the README or contact support.
             }
         };
         
+        console.log('Detailed configuration status:', status);
         return status;
     }
 }
