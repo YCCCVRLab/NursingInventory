@@ -421,7 +421,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                             <span class="label-text">Description</span>
                         </label>
                         <input type="text" id="itemDescription" name="description" 
-                               class="input input-bordered" placeholder="e.g., 8\" X 10\"" />
+                               class="input input-bordered" placeholder="e.g., 8&quot; X 10&quot;" />
                     </div>
                     
                     <div class="form-control">
@@ -992,7 +992,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                     return data[0];
                 }
             } catch (error) {
-                console.error('Error saving item:', error);
+                console.error('Error saving item:&#x27;, error);
                 throw error;
             }
         }
@@ -1289,7 +1289,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
-                const lines = text.split('\\n').filter(line => line.trim());
+                const lines = text.split('\n').filter(line => line.trim());
                 
                 if (lines.length < 2) {
                     showToast('CSV file must have at least a header row and one data row', 'error');
@@ -1441,10 +1441,10 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 headers.join(','),
                 ...data.map(item => 
                     headers.map(header => 
-                        `"${(item[header] || '').toString().replace(/"/g, '""')}"`
+                        `"${(item[header] || '').toString().replace(/"/g, '&quot;')}"`
                     ).join(',')
                 )
-            ].join('\\n');
+            ].join('\n');
             
             return csvContent;
         }
@@ -1483,11 +1483,11 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             return [
                 {"item": "ABD Pads", "description": "", "location": "Storage Shelf # 1", "shelf": "Shelf # 2", "tub": "7", "quantity": "2"},
                 {"item": "ABD Pads", "description": "", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "24"},
-                {"item": "ABD Pads", "description": "8\" X 10\"", "location": "Wound Care Cart", "shelf": "Right Drawer # 6", "tub": "", "quantity": "5"},
+                {"item": "ABD Pads", "description": "8&quot; X 10&quot;", "location": "Wound Care Cart", "shelf": "Right Drawer # 6", "tub": "", "quantity": "5"},
                 {"item": "Adhesive Bandage", "description": "Wound Closure", "location": "Wound Care Cart", "shelf": "Right Drawer # 1", "tub": "", "quantity": "19"},
                 {"item": "Gauze Pads", "description": "3 X 3", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "175"},
                 {"item": "Sterile Saline", "description": "100 ml for wounds", "location": "Storage Shelf # 1", "shelf": "Top of shelving", "tub": "", "quantity": "12"},
-                {"item": "Tape Surgical Paper", "description": "1\"", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "33 rolls"}
+                {"item": "Tape Surgical Paper", "description": "1&quot;", "location": "Storage Shelf # 1", "shelf": "Shelf # 4", "tub": "13", "quantity": "33 rolls"}
             ];
         }
 
