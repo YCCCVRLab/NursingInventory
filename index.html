@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Nursing Lab Inventory Management System</title>
+    <title>YCCC Nursing Lab Inventory Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -42,8 +42,9 @@
             <div class="card-body">
                 <div class="text-center mb-6">
                     <i class="fas fa-hospital-alt text-4xl text-primary mb-4"></i>
-                    <h2 class="card-title text-2xl justify-center">Nursing Lab Inventory</h2>
-                    <p class="text-base-content opacity-70">Secure access required</p>
+                    <h2 class="card-title text-2xl justify-center">YCCC Nursing Lab</h2>
+                    <p class="text-base-content opacity-70">Inventory Management System</p>
+                    <p class="text-sm text-base-content opacity-60 mt-2">York County Community College</p>
                 </div>
                 
                 <div id="loginForm" class="space-y-4">
@@ -109,7 +110,7 @@
         <div class="navbar bg-primary text-primary-content shadow-lg">
             <div class="flex-1">
                 <i class="fas fa-hospital-alt text-2xl mr-3"></i>
-                <h1 class="text-xl font-bold">Nursing Lab Inventory Management</h1>
+                <h1 class="text-xl font-bold">YCCC Nursing Lab Inventory</h1>
             </div>
             <div class="flex-none gap-2">
                 <div class="badge badge-secondary badge-lg">
@@ -145,8 +146,39 @@
             <div class="alert alert-info mb-6">
                 <i class="fas fa-info-circle"></i>
                 <div>
-                    <h3 class="font-bold">Welcome to the Nursing Lab Inventory System!</h3>
-                    <div class="text-sm">Database is being set up automatically. You can start adding inventory items.</div>
+                    <h3 class="font-bold">York County Community College Nursing Lab</h3>
+                    <div class="text-sm">Shared inventory management system for all nursing program staff and students.</div>
+                </div>
+            </div>
+            
+            <!-- Search and Filter Section -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Search Inventory</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Search Items</span>
+                            </label>
+                            <input type="text" id="searchInput" placeholder="Search by item name..." class="input input-bordered" oninput="filterInventory()" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Filter by Location</span>
+                            </label>
+                            <select id="locationFilter" class="select select-bordered" onchange="filterInventory()">
+                                <option value="">All Locations</option>
+                            </select>
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Filter by Category</span>
+                            </label>
+                            <select id="categoryFilter" class="select select-bordered" onchange="filterInventory()">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -154,30 +186,42 @@
             <div class="card bg-base-100 shadow-xl mb-6">
                 <div class="card-body">
                     <h2 class="card-title">Add New Inventory Item</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text">Item Name</span>
+                                <span class="label-text">Item Name *</span>
                             </label>
                             <input type="text" id="itemName" placeholder="Enter item name" class="input input-bordered" />
                         </div>
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text">Location</span>
+                                <span class="label-text">Location *</span>
                             </label>
-                            <input type="text" id="itemLocation" placeholder="Enter location" class="input input-bordered" />
+                            <input type="text" id="itemLocation" placeholder="e.g., Storage Shelf # 1" class="input input-bordered" />
                         </div>
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text">Quantity</span>
+                                <span class="label-text">Quantity *</span>
                             </label>
-                            <input type="number" id="itemQuantity" placeholder="Enter quantity" class="input input-bordered" />
+                            <input type="text" id="itemQuantity" placeholder="e.g., 25 or 5 boxes" class="input input-bordered" />
                         </div>
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text">Description</span>
                             </label>
-                            <input type="text" id="itemDescription" placeholder="Enter description" class="input input-bordered" />
+                            <input type="text" id="itemDescription" placeholder="Size, type, etc." class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Shelf/Drawer</span>
+                            </label>
+                            <input type="text" id="itemShelf" placeholder="e.g., Shelf # 2" class="input input-bordered" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Tub #</span>
+                            </label>
+                            <input type="text" id="itemTub" placeholder="e.g., 7" class="input input-bordered" />
                         </div>
                     </div>
                     <div class="card-actions justify-end mt-4">
@@ -282,7 +326,7 @@
             try {
                 const user = await userbase.signUp({ username, password });
                 await handleSuccessfulAuth(user);
-                showToast('Account created successfully!', 'success');
+                showToast('Account created successfully! Welcome to YCCC Nursing Lab.', 'success');
             } catch (error) {
                 console.error('Signup error:', error);
                 showToast('Signup failed: ' + error.message, 'error');
@@ -316,7 +360,7 @@
             // Show main app
             showMainApp();
             
-            // Load inventory data
+            // Load inventory data (shared for all users)
             await loadInventoryData();
             populateFilters();
             updateStats();
@@ -329,19 +373,16 @@
             try {
                 supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.key);
                 
-                // Test connection and auto-create table if needed
+                // Test connection
                 const { data: testData, error: testError } = await supabase
                     .from('inventory_items')
                     .select('count')
                     .limit(1);
                 
                 if (testError && testError.code === 'PGRST116') {
-                    // Table doesn't exist, create it
-                    await createInventoryTable();
+                    showToast('Database table not found - please contact administrator', 'warning');
                 } else if (testError) {
                     console.log('Database test error:', testError);
-                    // Try to create table anyway
-                    await createInventoryTable();
                 }
                 
                 updateConnectionStatus('Connected', 'success');
@@ -352,88 +393,22 @@
             }
         }
 
-        // Auto-create inventory table with proper SQL
-        async function createInventoryTable() {
-            try {
-                console.log('Creating inventory table...');
-                
-                // Create the table using a simple approach
-                const { data, error } = await supabase
-                    .from('inventory_items')
-                    .insert([{
-                        user_id: currentUser.userId,
-                        item: 'Test Item',
-                        description: 'Initial setup item',
-                        location: 'Setup',
-                        shelf: '',
-                        tub: '',
-                        quantity: '1'
-                    }])
-                    .select();
-
-                if (error && error.code === 'PGRST116') {
-                    // Table doesn't exist, we need to create it manually
-                    showToast('Setting up database - this may take a moment...', 'info');
-                    
-                    // For now, show a helpful message
-                    showToast('Please create the inventory_items table in your Supabase dashboard', 'warning');
-                    console.log('Table creation needed. Please run this SQL in your Supabase SQL editor:');
-                    console.log(`
-CREATE TABLE public.inventory_items (
-    id SERIAL PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    item TEXT NOT NULL,
-    description TEXT,
-    location TEXT NOT NULL,
-    shelf TEXT,
-    tub TEXT,
-    quantity TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable Row Level Security
-ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
-
--- Create policy for user isolation
-CREATE POLICY "Users can only access their own items" 
-ON public.inventory_items FOR ALL 
-USING (user_id = auth.uid()::text);
-                    `);
-                } else if (error) {
-                    console.error('Table creation error:', error);
-                } else {
-                    // Table exists and test item was inserted, remove it
-                    if (data && data[0]) {
-                        await supabase
-                            .from('inventory_items')
-                            .delete()
-                            .eq('id', data[0].id);
-                    }
-                    showToast('Database ready!', 'success');
-                }
-            } catch (error) {
-                console.error('Table setup error:', error);
-                showToast('Database setup needed - check console for SQL', 'warning');
-            }
-        }
-
-        // Enhanced data loading with user isolation
+        // Enhanced data loading - SHARED inventory for all users
         async function loadInventoryData() {
-            if (!supabase || !currentUser) return;
+            if (!supabase) return;
             
             showLoading(true);
             try {
+                // Load ALL inventory items (shared across all users)
                 const { data, error } = await supabase
                     .from('inventory_items')
                     .select('*')
-                    .eq('user_id', currentUser.userId)
                     .order('item');
                     
                 if (error) {
                     console.error('Error loading data:', error);
                     if (error.code === 'PGRST116') {
-                        showToast('Database table not found - please set up the table first', 'warning');
+                        showToast('Database table not found - please contact administrator', 'warning');
                     } else {
                         throw error;
                     }
@@ -450,12 +425,14 @@ USING (user_id = auth.uid()::text);
             }
         }
 
-        // Add new item function
+        // Add new item function - adds to shared inventory
         async function addItem() {
             const itemName = document.getElementById('itemName').value.trim();
             const location = document.getElementById('itemLocation').value.trim();
             const quantity = document.getElementById('itemQuantity').value.trim();
             const description = document.getElementById('itemDescription').value.trim();
+            const shelf = document.getElementById('itemShelf').value.trim();
+            const tub = document.getElementById('itemTub').value.trim();
 
             if (!itemName || !location || !quantity) {
                 showToast('Please fill in required fields (Name, Location, Quantity)', 'error');
@@ -466,10 +443,12 @@ USING (user_id = auth.uid()::text);
                 const { data, error } = await supabase
                     .from('inventory_items')
                     .insert([{
-                        user_id: currentUser.userId,
+                        user_id: 'yccc-shared', // Shared inventory identifier
                         item: itemName,
                         description: description,
                         location: location,
+                        shelf: shelf,
+                        tub: tub,
                         quantity: quantity
                     }])
                     .select();
@@ -481,17 +460,42 @@ USING (user_id = auth.uid()::text);
                 document.getElementById('itemLocation').value = '';
                 document.getElementById('itemQuantity').value = '';
                 document.getElementById('itemDescription').value = '';
+                document.getElementById('itemShelf').value = '';
+                document.getElementById('itemTub').value = '';
 
                 // Refresh data
                 await loadInventoryData();
+                populateFilters();
                 updateStats();
                 renderInventory(filteredData);
 
-                showToast('Item added successfully!', 'success');
+                showToast('Item added to YCCC Nursing Lab inventory!', 'success');
             } catch (error) {
                 console.error('Error adding item:', error);
                 showToast('Error adding item: ' + error.message, 'error');
             }
+        }
+
+        // Filter inventory function
+        function filterInventory() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const locationFilter = document.getElementById('locationFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            filteredData = inventoryData.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    item.item.toLowerCase().includes(searchTerm) ||
+                    (item.description && item.description.toLowerCase().includes(searchTerm));
+                
+                const matchesLocation = !locationFilter || item.location === locationFilter;
+                
+                const matchesCategory = !categoryFilter || item.item.toLowerCase().includes(categoryFilter.toLowerCase());
+
+                return matchesSearch && matchesLocation && matchesCategory;
+            });
+
+            renderInventory(filteredData);
+            updateStats();
         }
 
         // UI Helper functions
@@ -534,7 +538,6 @@ USING (user_id = auth.uid()::text);
             }
         }
 
-        // Missing showLoading function - this was causing the ReferenceError
         function showLoading(show) {
             const loadingOverlay = document.getElementById('loadingOverlay');
             const mainApp = document.getElementById('mainApp');
@@ -548,22 +551,32 @@ USING (user_id = auth.uid()::text);
             }
         }
 
-        // Placeholder functions that might be called but not defined
         function populateFilters() {
-            // Placeholder for filter population logic
-            console.log('populateFilters called');
+            // Populate location filter
+            const locations = [...new Set(inventoryData.map(item => item.location))].sort();
+            const locationFilter = document.getElementById('locationFilter');
+            locationFilter.innerHTML = '<option value="">All Locations</option>';
+            locations.forEach(location => {
+                locationFilter.innerHTML += `<option value="${location}">${location}</option>`;
+            });
+
+            // Populate category filter (based on common item types)
+            const categories = ['Gauze', 'Tape', 'Sponge', 'Dressing', 'Swab', 'Pad', 'Bandage'];
+            const categoryFilter = document.getElementById('categoryFilter');
+            categoryFilter.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(category => {
+                categoryFilter.innerHTML += `<option value="${category}">${category}</option>`;
+            });
         }
 
         function updateStats() {
-            // Update the total items counter
             const totalItemsElement = document.getElementById('totalItems');
             if (totalItemsElement) {
-                totalItemsElement.textContent = inventoryData.length;
+                totalItemsElement.textContent = filteredData.length;
             }
         }
 
         function renderInventory(data) {
-            // Render inventory items
             const inventoryList = document.getElementById('inventoryList');
             if (!inventoryList) return;
 
@@ -571,7 +584,7 @@ USING (user_id = auth.uid()::text);
                 inventoryList.innerHTML = `
                     <div class="text-center py-8 text-base-content/70">
                         <i class="fas fa-box-open text-4xl mb-4"></i>
-                        <p>No inventory items yet. Add your first item above!</p>
+                        <p>No inventory items found matching your criteria.</p>
                     </div>
                 `;
                 return;
@@ -581,15 +594,17 @@ USING (user_id = auth.uid()::text);
                 <div class="card bg-base-200 shadow-sm">
                     <div class="card-body p-4">
                         <div class="flex justify-between items-start">
-                            <div>
+                            <div class="flex-1">
                                 <h3 class="card-title text-lg">${item.item}</h3>
-                                <p class="text-sm text-base-content/70">${item.description || 'No description'}</p>
-                                <div class="flex gap-4 mt-2 text-sm">
-                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${item.location}</span>
-                                    <span><i class="fas fa-cubes mr-1"></i>Qty: ${item.quantity}</span>
+                                <p class="text-sm text-base-content/70 mb-2">${item.description || 'No description'}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <span><i class="fas fa-map-marker-alt mr-1 text-primary"></i><strong>Location:</strong> ${item.location}</span>
+                                    ${item.shelf ? `<span><i class="fas fa-layer-group mr-1 text-secondary"></i><strong>Shelf:</strong> ${item.shelf}</span>` : ''}
+                                    ${item.tub ? `<span><i class="fas fa-box mr-1 text-accent"></i><strong>Tub:</strong> ${item.tub}</span>` : ''}
+                                    <span><i class="fas fa-cubes mr-1 text-info"></i><strong>Qty:</strong> ${item.quantity}</span>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 ml-4">
                                 <button class="btn btn-sm btn-outline" onclick="editItem('${item.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -604,8 +619,7 @@ USING (user_id = auth.uid()::text);
         }
 
         function setupEventListeners() {
-            // Placeholder for event listener setup
-            console.log('setupEventListeners called');
+            console.log('Event listeners set up for YCCC Nursing Lab inventory');
         }
 
         // Make functions globally accessible for onclick handlers
@@ -615,6 +629,7 @@ USING (user_id = auth.uid()::text);
         window.showSignupForm = showSignupForm;
         window.handleLogout = handleLogout;
         window.addItem = addItem;
+        window.filterInventory = filterInventory;
 
         function updateConnectionStatus(status, type) {
             const statusEl = document.getElementById('connectionStatus');
@@ -623,7 +638,6 @@ USING (user_id = auth.uid()::text);
         }
 
         function showToast(message, type = 'info') {
-            // Create toast notification
             const toast = document.createElement('div');
             toast.className = `alert alert-${type} shadow-lg mb-2 fade-in fixed top-4 right-4 z-50 max-w-sm`;
             toast.innerHTML = `
