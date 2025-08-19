@@ -10,7 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://sdk.userbase.com/2/userbase.js"></script>
-    <script src="js/config.js"></script>
+    <script src="js/config.js" type="module"></script>
     <style>
         .low-stock { border-left: 4px solid #ef4444; }
         .medium-stock { border-left: 4px solid #f59e0b; }
@@ -138,7 +138,7 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
         // Get configuration from secure config manager
         const CONFIG = window.AppConfig.get();
 
