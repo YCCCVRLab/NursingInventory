@@ -402,7 +402,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
         </div>
     </div>
 
-    <!-- Add/Edit Item Modal - From old HTML -->
+    <!-- Add/Edit Item Modal -->
     <div id="itemModal" class="modal">
         <div class="modal-box w-11/12 max-w-2xl">
             <h3 class="font-bold text-lg mb-4" id="modalTitle">Add New Item</h3>
@@ -475,7 +475,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
         </div>
     </div>
 
-    <!-- Smart Import Modal - From old HTML -->
+    <!-- Smart Import Modal -->
     <div id="importModal" class="modal">
         <div class="modal-box max-w-2xl">
             <h3 class="font-bold text-lg mb-4">Smart CSV Import</h3>
@@ -494,7 +494,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                         <h4 class="font-bold">Smart Import Features:</h4>
                         <ul class="text-sm mt-1 space-y-1">
                             <li>• Automatically handles uppercase/lowercase columns</li>
-                            <li>• Maps common column variations (e.g., "SHELF #/DRAWER #" → "shelf")</li>
+                            <li>• Maps common column variations (e.g., "SHELF #/DRAWER #")</li>
                             <li>• Shows preview before importing</li>
                             <li>• Skips empty rows automatically</li>
                         </ul>
@@ -533,7 +533,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal - From old HTML -->
+    <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg text-error mb-4">Confirm Deletion</h3>
@@ -552,7 +552,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
         </div>
     </div>
 
-    <!-- Toast Notifications - From old HTML -->
+    <!-- Toast Notifications -->
     <div id="toastContainer" class="toast toast-top toast-end z-50">
         <!-- Toasts will be added here dynamically -->
     </div>
@@ -745,9 +745,8 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
                 return 'Cleaning & Prep';
             } else if (itemName.includes('glove') || itemName.includes('protection')) {
                 return 'Protection';
-            } else {
-                return 'Other Supplies';
             }
+            return 'Other Supplies'; // Default category
         }
 
         function getStockLevel(quantity) {
@@ -927,9 +926,8 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
 
             if (currentSort) {
                 sortItems(currentSort, false); // Don't re-render, sortItems will call renderInventory
-            } else {
-                renderInventory(filteredData);
             }
+            renderInventory(filteredData); // Always render after filtering
             updateStats(); // Update stats after filtering
         }
 
@@ -1079,7 +1077,9 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_item ON public.inventory_items(it
             const stored = localStorage.getItem('inventoryData');
             if (stored) {
                 inventoryData = JSON.parse(stored);
-            } else {
+            }
+            // If no stored data, initialize with sample data in demo mode
+            if (inventoryData.length === 0) {
                 inventoryData = getSampleData();
                 localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
             }
